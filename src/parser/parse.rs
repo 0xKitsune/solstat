@@ -231,7 +231,239 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                 }
             }
         }
-        Node::Expression(expression) => {}
+        Node::Expression(expression) => match expression {
+            pt::Expression::Add(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::And(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::ArrayLiteral(_, vec_expression) => {
+                for expression in vec_expression {
+                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                }
+            }
+
+            pt::Expression::ArraySlice(
+                _,
+                box_expression,
+                option_box_expression,
+                option_box_expression_1,
+            ) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+
+                if option_box_expression.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_expression.unwrap().into(),
+                    ));
+                }
+
+                if option_box_expression_1.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_expression_1.unwrap().into(),
+                    ));
+                }
+            }
+            pt::Expression::ArraySubscript(_, box_expression, option_box_expression) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+
+                if option_box_expression.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_expression.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::Expression::Assign(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignAdd(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+            pt::Expression::AssignAnd(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignDivide(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignModulo(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignMultiply(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignOr(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+            pt::Expression::AssignShiftLeft(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignShiftRight(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::AssignSubtract(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+            pt::Expression::AssignXor(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::BitwiseAnd(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::BitwiseOr(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::BitwiseXor(_, box_expression, box_expression_1) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression_1.into(),
+                ));
+            }
+
+            pt::Expression::Complement(_, box_expression) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_expression.into(),
+                ));
+            } // _ => {
+              //     //Address literal
+              //     //Bool literal
+              //
+              // }
+        },
     }
 
     matches
