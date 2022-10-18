@@ -8,6 +8,8 @@
 use solang_parser::pt::{ContractPart, Expression, Loc, Type};
 use solang_parser::{self, pt::SourceUnit, pt::SourceUnitPart};
 
+use crate::parser::parse::extract_targets_from_node;
+
 ///Identifiy opportunities to pack structs to save gas
 pub fn analyze_for_mul_2_optimization(source_unit: SourceUnit) -> HashMap<Loc, Loc> {
     let mut optimization_locations: HashMap<Loc, Loc> = HashMap::new();
@@ -26,8 +28,7 @@ pub fn analyze_for_mul_2_optimization(source_unit: SourceUnit) -> HashMap<Loc, L
                         let function_body_statement = function_definition.body.unwrap();
 
                         //extract the expressions from the function body statement
-                        let expressions =
-                            extract_expressions_from_statement(function_body_statement);
+                        let expressions = extract_targets_from_node(function_body_statement);
 
                         //for each extracted expression, look for instances of expr*2 or 2*expr
                         for expression in expressions {

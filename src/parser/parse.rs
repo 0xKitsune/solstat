@@ -149,6 +149,13 @@ impl Into<Node> for Box<pt::Expression> {
         Node::Expression(*self)
     }
 }
+
+pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
+    let targets = HashSet::new();
+    targets.insert(target);
+    return extract_targets_from_node(targets, node);
+}
+
 //Extract target ast node types from a parent node
 pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<Node> {
     let mut matches = vec![];
