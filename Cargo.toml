@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 clap = {version= "4.0.15", features = ["derive"]}
+solang-parser = "0.1.13"
+indicatif = "0.16.2"
