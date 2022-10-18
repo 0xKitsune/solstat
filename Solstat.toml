@@ -1,0 +1,11 @@
+[profile.default]
+# Directory / Directories that contain contracts to be analyzed
+src = ['src']
+# Directory where reports/output files will be written
+out = 'out'
+# Optimizations that each contract will be analyzed for
+optimizations = ['lib']
+# Vulnerabilities that each contract will be analyzed for
+vulnerabilities = ['']
+
+# See more config options < TODO: link here>
