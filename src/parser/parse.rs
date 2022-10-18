@@ -11,6 +11,7 @@ pub enum Target {
     Args,
     Return,
     Revert,
+    RevertNamedArgs,
     Emit,
     Expression,
     VariableDefinition,
@@ -69,23 +70,56 @@ pub enum Target {
     UnaryMinus,
     UnaryPlus,
     Unit,
+
+    //If there is no target that corresponds
+    None,
+}
+
+pub fn statement_to_target(statement: pt::Statement) -> Target {
+    match statement {
+        pt::Statement::Args(_, _) => return Target::Args,
+        pt::Statement::Return(_, _) => return Target::Return,
+        pt::Statement::Revert(_, _, _) => return Target::Revert,
+        pt::Statement::Emit(_, _) => return Target::Emit,
+        pt::Statement::RevertNamedArgs(_, _, _) => return Target::RevertNamedArgs,
+        pt::Statement::Expression(_, _) => return Target::Expression,
+        pt::Statement::VariableDefinition(_, _, _) => return Target::VariableDefinition,
+        pt::Statement::Block {
+            loc,
+            unchecked,
+            statements,
+        } => return Target::Block,
+        pt::Statement::If(_, _, _, _) => return Target::If,
+        pt::Statement::While(_, _, _) => return Target::While,
+        pt::Statement::For(_, _, _, _, _) => return Target::For,
+        pt::Statement::DoWhile(_, _, _) => return Target::DoWhile,
+        pt::Statement::Try(_, _, _, _) => return Target::Try,
+        _ => return Target::None,
+    }
+}
+
+pub fn expression_to_target(expression: pt::Expression) -> Target {
+    Target::None
 }
 
 impl Into<Target> for Node {
     fn into(self) -> Target {
-        todo!()
+        match self {
+            Self::Expression(expression) => return expression_to_target(expression),
+            Self::Statement(statement) => return statement_to_target(statement),
+        }
     }
 }
 
 impl Into<Target> for pt::Statement {
     fn into(self) -> Target {
-        todo!()
+        statement_to_target(self)
     }
 }
 
 impl Into<Target> for pt::Expression {
     fn into(self) -> Target {
-        todo!()
+        expression_to_target(self)
     }
 }
 
