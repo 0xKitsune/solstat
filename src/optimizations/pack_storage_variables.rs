@@ -13,9 +13,7 @@ pub fn pack_storage_variables_optimization(source_unit: SourceUnit) -> HashSet<L
         ast::extract_target_from_node(Target::ContractDefinition, source_unit.into());
 
     for node in target_nodes {
-        let source_unit_part = node
-            .source_unit_part()
-            .expect("Node is not a source unit part");
+        let source_unit_part = node.source_unit_part().unwrap();
 
         if let pt::SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
             let mut variable_sizes: Vec<u16> = vec![];

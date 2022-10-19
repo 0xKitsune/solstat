@@ -12,7 +12,7 @@ pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
 
     for node in target_nodes {
         //We can use expect because Target::FunctionCall is an expression
-        let expression = node.expression().expect("Node is not an expression");
+        let expression = node.expression().unwrap();
 
         match expression {
             Expression::FunctionCall(loc, function_identifier, function_call_expressions) => {
@@ -23,7 +23,7 @@ pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
                         //for each expression in the function call expressions
                         for func_call_expression in function_call_expressions {
                             //if there is an and expression (ie. &&)
-                            if let Expression::And(loc, _, _) = func_call_expression {
+                            if let Expression::And(_, _, _) = func_call_expression {
                                 //add the location to the list of optimization locations
                                 optimization_locations.insert(loc);
                             }
