@@ -68,7 +68,7 @@ fn check_if_inputs_are_power_of_two(
 }
 
 #[test]
-fn test_analyze_for_mul_2_optimization() {
+fn test_shift_math_optimization() {
     let file_contents = r#"
 
     contract Contract0 {
