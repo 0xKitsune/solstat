@@ -11,7 +11,7 @@ pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let target_nodes = ast::extract_target_from_node(Target::FunctionCall, source_unit.into());
 
     for node in target_nodes {
-        //We can use expect because Target::FunctionCall is an expression
+        //We can use unwrap because Target::FunctionCall is an expression
         let expression = node.expression().unwrap();
 
         match expression {
