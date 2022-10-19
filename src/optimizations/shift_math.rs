@@ -14,7 +14,7 @@ pub fn shift_math_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
 
     for node in target_nodes {
         //We can use expect because both Target::Multiply and Target::Divide are expressions
-        let expression = node.expression().expect("Node was not an expression");
+        let expression = node.expression().expect("Node is not an expression");
 
         match expression {
             Expression::Multiply(loc, box_expression, box_expression_1) => {
