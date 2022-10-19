@@ -339,7 +339,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                     }
                 }
 
-                pt::Statement::Revert(_, _, vec_expression) => {
+                pt::Statement::Revert(_, option_identifier_path, vec_expression) => {
                     for expression in vec_expression {
                         matches.append(&mut extract_targets_from_node(targets, expression.into()));
                     }
@@ -349,7 +349,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                     matches.append(&mut extract_targets_from_node(targets, expression.into()));
                 }
 
-                pt::Statement::RevertNamedArgs(_, _, vec_named_arguments) => {
+                pt::Statement::RevertNamedArgs(_, option_identifier_path, vec_named_arguments) => {
                     for named_argument in vec_named_arguments {
                         matches.append(&mut extract_targets_from_node(
                             targets,
@@ -455,7 +455,6 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                     matches.append(&mut extract_targets_from_node(targets, expression.into()));
                 }
 
-                //------------------------------------
                 pt::Statement::Try(_, expression, option_paramlist_box_statement, _) => {
                     matches.append(&mut extract_targets_from_node(targets, expression.into()));
 
@@ -797,7 +796,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                 }
             }
 
-            pt::Expression::MemberAccess(_, box_expression, _) => {
+            pt::Expression::MemberAccess(_, box_expression, identifier) => {
                 matches.append(&mut extract_targets_from_node(
                     targets,
                     box_expression.into(),
@@ -1004,7 +1003,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                                 }
                             }
 
-                            pt::FunctionAttribute::NameValue(_, _, expression) => {
+                            pt::FunctionAttribute::NameValue(_, identifier, expression) => {
                                 matches.append(&mut extract_targets_from_node(
                                     targets,
                                     expression.into(),
@@ -1039,7 +1038,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                                     }
                                 }
 
-                                pt::FunctionAttribute::NameValue(_, _, expression) => {
+                                pt::FunctionAttribute::NameValue(_, identifier, expression) => {
                                     matches.append(&mut extract_targets_from_node(
                                         targets,
                                         expression.into(),
@@ -1067,7 +1066,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                 ));
             }
 
-            pt::Expression::Unit(_, box_expression, _) => {
+            pt::Expression::Unit(_, box_expression, unit) => {
                 matches.append(&mut extract_targets_from_node(
                     targets,
                     box_expression.into(),
