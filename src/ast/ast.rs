@@ -1,9 +1,6 @@
-use std::{
-    collections::{HashMap, HashSet},
-    vec,
-};
+use std::{collections::HashSet, vec};
 
-use solang_parser::pt::{self, Expression, NamedArgument, Statement};
+use solang_parser::pt;
 
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Target {
@@ -173,7 +170,7 @@ pub fn expression_as_target(expression: &pt::Expression) -> Target {
         pt::Expression::ShiftRight(_, _, _) => Target::ShiftRight,
         pt::Expression::Subtract(_, _, _) => Target::Subtract,
         pt::Expression::Ternary(_, _, _, _) => Target::Ternary,
-        pt::Expression::Type(_, ty) => Target::Type,
+        pt::Expression::Type(_, _) => Target::Type,
         pt::Expression::UnaryMinus(_, _) => Target::UnaryMinus,
         pt::Expression::UnaryPlus(_, _) => Target::UnaryPlus,
         pt::Expression::Unit(_, _, _) => Target::Unit,
@@ -322,8 +319,6 @@ pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
 //Extract target ast node types from a parent node
 pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<Node> {
     let mut matches = vec![];
-
-    // let node_as_target = o
 
     if targets.contains(&node.as_target()) {
         matches.push(node.clone());
@@ -553,7 +548,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 }
             }
 
-            pt::Statement::Revert(_, option_identifier_path, vec_expression) => {
+            pt::Statement::Revert(_, _, vec_expression) => {
                 for expression in vec_expression {
                     matches.append(&mut extract_targets_from_node(targets, expression.into()));
                 }
@@ -563,7 +558,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 matches.append(&mut extract_targets_from_node(targets, expression.into()));
             }
 
-            pt::Statement::RevertNamedArgs(_, option_identifier_path, vec_named_arguments) => {
+            pt::Statement::RevertNamedArgs(_, _, vec_named_arguments) => {
                 for named_argument in vec_named_arguments {
                     matches.append(&mut extract_targets_from_node(
                         targets,
@@ -591,8 +586,8 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Statement::Block {
-                loc,
-                unchecked,
+                loc: _,
+                unchecked: _,
                 statements,
             } => {
                 for statement in statements {
@@ -1010,7 +1005,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 }
             }
 
-            pt::Expression::MemberAccess(_, box_expression, identifier) => {
+            pt::Expression::MemberAccess(_, box_expression, _) => {
                 matches.append(&mut extract_targets_from_node(
                     targets,
                     box_expression.into(),
@@ -1217,7 +1212,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                                 }
                             }
 
-                            pt::FunctionAttribute::NameValue(_, identifier, expression) => {
+                            pt::FunctionAttribute::NameValue(_, _, expression) => {
                                 matches.append(&mut extract_targets_from_node(
                                     targets,
                                     expression.into(),
@@ -1252,7 +1247,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                                     }
                                 }
 
-                                pt::FunctionAttribute::NameValue(_, identifier, expression) => {
+                                pt::FunctionAttribute::NameValue(_, _, expression) => {
                                     matches.append(&mut extract_targets_from_node(
                                         targets,
                                         expression.into(),
@@ -1280,7 +1275,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 ));
             }
 
-            pt::Expression::Unit(_, box_expression, unit) => {
+            pt::Expression::Unit(_, box_expression, _) => {
                 matches.append(&mut extract_targets_from_node(
                     targets,
                     box_expression.into(),
