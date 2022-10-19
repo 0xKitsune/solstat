@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::u32;
 
 use solang_parser::pt::{Expression, Loc};
 use solang_parser::{self, pt::SourceUnit};
