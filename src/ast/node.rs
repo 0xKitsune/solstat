@@ -41,10 +41,27 @@ impl Node {
             _ => None,
         }
     }
+
+    pub fn is_source_unit_part(&self) -> bool {
+        if let Self::SourceUnitPart(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn contract_part(self) -> Option<pt::ContractPart> {
         match self {
             Self::ContractPart(contract_part) => Some(contract_part),
             _ => None,
+        }
+    }
+
+    pub fn is_contract_part(&self) -> bool {
+        if let Self::ContractPart(_) = self {
+            true
+        } else {
+            false
         }
     }
 }
