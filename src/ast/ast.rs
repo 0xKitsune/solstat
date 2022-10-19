@@ -247,11 +247,23 @@ impl Into<Target> for pt::Expression {
     }
 }
 
+impl Into<Target> for pt::ContractPart {
+    fn into(self) -> Target {
+        contract_part_to_target(self)
+    }
+}
+
+impl Into<Target> for pt::SourceUnitPart {
+    fn into(self) -> Target {
+        source_unit_part_to_target(self)
+    }
+}
+
 pub enum Node {
     Statement(pt::Statement),
     Expression(pt::Expression),
     SourceUnitPart(pt::SourceUnitPart),
-    ContractPart(pt::ContractPart), //TODO: conract part
+    ContractPart(pt::ContractPart),
 }
 
 impl Into<Node> for pt::Statement {
@@ -259,6 +271,7 @@ impl Into<Node> for pt::Statement {
         Node::Statement(self)
     }
 }
+
 impl Into<Node> for Box<pt::Statement> {
     fn into(self) -> Node {
         Node::Statement(*self)
@@ -273,6 +286,18 @@ impl Into<Node> for pt::Expression {
 impl Into<Node> for Box<pt::Expression> {
     fn into(self) -> Node {
         Node::Expression(*self)
+    }
+}
+
+impl Into<Node> for pt::ContractPart {
+    fn into(self) -> Node {
+        Node::ContractPart(self)
+    }
+}
+
+impl Into<Node> for pt::SourceUnitPart {
+    fn into(self) -> Node {
+        Node::SourceUnitPart(self)
     }
 }
 
@@ -302,11 +327,71 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
 
     match node {
         Node::SourceUnitPart(source_unit_part) => match source_unit_part {
-            pt::SourceUnitPart::ContractDefinition(box_contract_definition) => {}
-            pt::SourceUnitPart::EnumDefinition(box_enum_definition) => {}
-            pt::SourceUnitPart::ErrorDefinition(box_error_definition) => {}
-            pt::SourceUnitPart::EventDefinition(box_event_definition) => {}
-            pt::SourceUnitPart::FunctionDefinition(box_function_definition) => {}
+            pt::SourceUnitPart::ContractDefinition(box_contract_definition) => {
+                //Walk the contract definition base for targets
+                for base in box_contract_definition.base {
+                    if base.args.is_some() {
+                        let args = base.args.unwrap();
+
+                        for arg in args {
+                            matches.append(&mut extract_targets_from_node(targets, arg.into()));
+                        }
+                    }
+                }
+
+                //Walk the contract definition parts for targets
+                for part in box_contract_definition.parts {
+                    matches.append(&mut extract_targets_from_node(targets, part.into()));
+                }
+            }
+
+            pt::SourceUnitPart::ErrorDefinition(box_error_definition) => {
+                for error_parameter in box_error_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        error_parameter.ty.into(),
+                    ));
+                }
+            }
+
+            pt::SourceUnitPart::EventDefinition(box_event_definition) => {
+                for event_parameter in box_event_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        event_parameter.ty.into(),
+                    ));
+                }
+            }
+
+            pt::SourceUnitPart::FunctionDefinition(box_function_definition) => {
+                //Walk params for targets
+                for (_, option_parameter) in box_function_definition.params {
+                    if option_parameter.is_some() {
+                        matches.append(&mut extract_targets_from_node(
+                            targets,
+                            option_parameter.unwrap().ty.into(),
+                        ));
+                    }
+                }
+                //Walk return params for targets
+                for (_, option_parameter) in box_function_definition.returns {
+                    if option_parameter.is_some() {
+                        matches.append(&mut extract_targets_from_node(
+                            targets,
+                            option_parameter.unwrap().ty.into(),
+                        ));
+                    }
+                }
+
+                //Walk the function body for targets
+                if box_function_definition.body.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_function_definition.body.unwrap().into(),
+                    ));
+                }
+            }
+
             pt::SourceUnitPart::ImportDirective(import) => {}
             pt::SourceUnitPart::StructDefinition(box_struct_definition) => {}
             pt::SourceUnitPart::TypeDefinition(box_type_definition) => {}
@@ -316,6 +401,7 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
             _ => {
                 //Pragma Directive
                 //Stray Semicolon
+                //EnumDefinition
             }
         },
 
