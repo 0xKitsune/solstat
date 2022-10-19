@@ -1,6 +1,16 @@
+pub mod address_balance;
+pub mod address_zero;
+pub mod assign_update_array_value;
+pub mod cache_array_length;
 pub mod increment_decrement;
+pub mod memory_to_calldata;
 pub mod multiple_require;
 pub mod pack_storage_variables;
 pub mod pack_struct_variables;
 pub mod payable_function;
+pub mod safe_math;
 pub mod shift_math;
+pub mod solidity_keccak256;
+pub mod solidity_math;
+pub mod sstore;
+pub mod string_errors;
