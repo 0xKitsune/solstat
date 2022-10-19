@@ -86,7 +86,7 @@ pub enum Target {
     Variable,
     This,
 
-    //Source Unit Part
+    //Source Unit / Contract Part
     ContractDefinition,
     EnumDefinition,
     EventDefinition,
@@ -98,8 +98,6 @@ pub enum Target {
     StructDefinition,
     TypeDefinition,
     Using,
-
-    //Contract Part
 
     //If there is no target that corresponds
     None,
@@ -303,6 +301,24 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
     }
 
     match node {
+        Node::SourceUnitPart(source_unit_part) => match source_unit_part {
+            pt::SourceUnitPart::ContractDefinition(box_contract_definition) => {}
+            pt::SourceUnitPart::EnumDefinition(box_enum_definition) => {}
+            pt::SourceUnitPart::ErrorDefinition(box_error_definition) => {}
+            pt::SourceUnitPart::EventDefinition(box_event_definition) => {}
+            pt::SourceUnitPart::FunctionDefinition(box_function_definition) => {}
+            pt::SourceUnitPart::ImportDirective(import) => {}
+            pt::SourceUnitPart::StructDefinition(box_struct_definition) => {}
+            pt::SourceUnitPart::TypeDefinition(box_type_definition) => {}
+            pt::SourceUnitPart::Using(box_using) => {}
+            pt::SourceUnitPart::VariableDefinition(box_variable_definition) => {}
+
+            _ => {
+                //Pragma Directive
+                //Stray Semicolon
+            }
+        },
+
         Node::Statement(statement) => {
             match statement {
                 pt::Statement::Args(_, named_arguments) => {
