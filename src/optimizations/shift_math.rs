@@ -1,10 +1,3 @@
-// use std::collections::HashMap;
-// use std::vec;
-
-// use crate::parser::solga_helpers::{
-//     extract_expressions_from_statement, parse_file_for_source_unit,
-// };
-
 use std::collections::HashSet;
 use std::u32;
 
