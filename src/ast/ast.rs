@@ -103,7 +103,7 @@ pub enum Target {
     None,
 }
 
-pub fn statement_to_target(statement: pt::Statement) -> Target {
+pub fn statement_as_target(statement: &pt::Statement) -> Target {
     match statement {
         pt::Statement::Args(_, _) => return Target::Args,
         pt::Statement::Return(_, _) => return Target::Return,
@@ -113,9 +113,9 @@ pub fn statement_to_target(statement: pt::Statement) -> Target {
         pt::Statement::Expression(_, _) => return Target::Expression,
         pt::Statement::VariableDefinition(_, _, _) => return Target::VariableDefinition,
         pt::Statement::Block {
-            loc,
-            unchecked,
-            statements,
+            loc: _,
+            unchecked: _,
+            statements: _,
         } => return Target::Block,
         pt::Statement::If(_, _, _, _) => return Target::If,
         pt::Statement::While(_, _, _) => return Target::While,
@@ -126,7 +126,7 @@ pub fn statement_to_target(statement: pt::Statement) -> Target {
     }
 }
 
-pub fn expression_to_target(expression: pt::Expression) -> Target {
+pub fn expression_as_target(expression: &pt::Expression) -> Target {
     match expression {
         pt::Expression::Add(_, _, _) => Target::Add,
         pt::Expression::And(_, _, _) => Target::And,
@@ -192,7 +192,7 @@ pub fn expression_to_target(expression: pt::Expression) -> Target {
     }
 }
 
-fn source_unit_part_to_target(source_unit_part: pt::SourceUnitPart) -> Target {
+fn source_unit_part_as_target(source_unit_part: &pt::SourceUnitPart) -> Target {
     match source_unit_part {
         pt::SourceUnitPart::ContractDefinition(_) => Target::ContractDefinition,
         pt::SourceUnitPart::EnumDefinition(_) => Target::EnumDefinition,
@@ -208,7 +208,7 @@ fn source_unit_part_to_target(source_unit_part: pt::SourceUnitPart) -> Target {
         pt::SourceUnitPart::VariableDefinition(_) => Target::VariableDefinition,
     }
 }
-fn contract_part_to_target(contract_part: pt::ContractPart) -> Target {
+fn contract_part_as_target(contract_part: &pt::ContractPart) -> Target {
     match contract_part {
         pt::ContractPart::EnumDefinition(_) => Target::EnumDefinition,
         pt::ContractPart::ErrorDefinition(_) => Target::ErrorDefinition,
@@ -222,43 +222,44 @@ fn contract_part_to_target(contract_part: pt::ContractPart) -> Target {
     }
 }
 
-impl Into<Target> for Node {
-    fn into(self) -> Target {
-        match self {
-            Self::Expression(expression) => return expression_to_target(expression),
-            Self::Statement(statement) => return statement_to_target(statement),
+impl Node {
+    pub fn as_target(&self) -> Target {
+        match &self {
+            Self::Expression(expression) => return expression_as_target(expression),
+            Self::Statement(statement) => return statement_as_target(statement),
             Self::SourceUnitPart(source_unit_part) => {
-                return source_unit_part_to_target(source_unit_part)
+                return source_unit_part_as_target(source_unit_part)
             }
-            Self::ContractPart(contract_part) => return contract_part_to_target(contract_part),
+            Self::ContractPart(contract_part) => return contract_part_as_target(contract_part),
         }
     }
 }
 
-impl Into<Target> for pt::Statement {
-    fn into(self) -> Target {
-        statement_to_target(self)
-    }
-}
+// impl Into<Target> for pt::Statement {
+//     fn into(self) -> Target {
+//         statement_to_target(self)
+//     }
+// }
 
-impl Into<Target> for pt::Expression {
-    fn into(self) -> Target {
-        expression_to_target(self)
-    }
-}
+// impl Into<Target> for pt::Expression {
+//     fn into(self) -> Target {
+//         expression_to_target(self)
+//     }
+// }
 
-impl Into<Target> for pt::ContractPart {
-    fn into(self) -> Target {
-        contract_part_to_target(self)
-    }
-}
+// impl Into<Target> for pt::ContractPart {
+//     fn into(self) -> Target {
+//         contract_part_to_target(self)
+//     }
+// }
 
-impl Into<Target> for pt::SourceUnitPart {
-    fn into(self) -> Target {
-        source_unit_part_to_target(self)
-    }
-}
+// impl Into<Target> for pt::SourceUnitPart {
+//     fn into(self) -> Target {
+//         source_unit_part_to_target(self)
+//     }
+// }
 
+#[derive(PartialEq, Clone)]
 pub enum Node {
     Statement(pt::Statement),
     Expression(pt::Expression),
@@ -302,27 +303,30 @@ impl Into<Node> for pt::SourceUnitPart {
 }
 
 pub fn new_target_set(targets: Vec<Target>) -> HashSet<Target> {
-    let targets = HashSet::new();
+    let mut target_set = HashSet::new();
 
     for target in targets {
-        targets.insert(target);
+        target_set.insert(target);
     }
 
-    targets
+    target_set
 }
 
 pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
-    let targets = HashSet::new();
+    let mut targets = HashSet::new();
     targets.insert(target);
-    return extract_targets_from_node(targets, node);
+
+    return extract_targets_from_node(&targets, node);
 }
 
 //Extract target ast node types from a parent node
-pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<Node> {
+pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<Node> {
     let mut matches = vec![];
 
-    if targets.contains(&node.into()) {
-        matches.push(node);
+    // let node_as_target = o
+
+    if targets.contains(&node.as_target()) {
+        matches.push(node.clone());
     }
 
     match node {
@@ -530,171 +534,170 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
             }
         },
 
-        Node::Statement(statement) => {
-            match statement {
-                pt::Statement::Args(_, named_arguments) => {
-                    for argument in named_arguments {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            argument.expr.into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::Return(_, option_expression) => {
-                    if option_expression.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_expression.unwrap().into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::Revert(_, option_identifier_path, vec_expression) => {
-                    for expression in vec_expression {
-                        matches.append(&mut extract_targets_from_node(targets, expression.into()));
-                    }
-                }
-
-                pt::Statement::Emit(_, expression) => {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-                }
-
-                pt::Statement::RevertNamedArgs(_, option_identifier_path, vec_named_arguments) => {
-                    for named_argument in vec_named_arguments {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            named_argument.expr.into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::Expression(_, expression) => {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-                }
-
-                pt::Statement::VariableDefinition(_, variable_declaration, option_expression) => {
+        Node::Statement(statement) => match statement {
+            pt::Statement::Args(_, named_arguments) => {
+                for argument in named_arguments {
                     matches.append(&mut extract_targets_from_node(
                         targets,
-                        variable_declaration.ty.into(),
+                        argument.expr.into(),
                     ));
-
-                    if option_expression.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_expression.unwrap().into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::Block {
-                    loc,
-                    unchecked,
-                    statements,
-                } => {
-                    for statement in statements {
-                        matches.append(&mut extract_targets_from_node(targets, statement.into()));
-                    }
-                }
-
-                pt::Statement::If(_, expression, box_statement, option_box_statement) => {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_statement.into(),
-                    ));
-
-                    if option_box_statement.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_box_statement.unwrap().into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::While(_, expression, box_statement) => {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_statement.into(),
-                    ));
-                }
-
-                pt::Statement::For(
-                    _,
-                    option_box_statement,
-                    option_box_expression,
-                    option_box_statement_1,
-                    option_box_statement_2,
-                ) => {
-                    if option_box_statement.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_box_statement.unwrap().into(),
-                        ));
-                    }
-
-                    if option_box_expression.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_box_expression.unwrap().into(),
-                        ));
-                    }
-
-                    if option_box_statement_1.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_box_statement_1.unwrap().into(),
-                        ));
-                    }
-                    if option_box_statement_2.is_some() {
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            option_box_statement_2.unwrap().into(),
-                        ));
-                    }
-                }
-
-                pt::Statement::DoWhile(_, box_statement, expression) => {
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_statement.into(),
-                    ));
-
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-                }
-
-                pt::Statement::Try(_, expression, option_paramlist_box_statement, _) => {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
-
-                    if option_paramlist_box_statement.is_some() {
-                        let (paramlist, box_statement) = option_paramlist_box_statement.unwrap();
-
-                        for (_, option_param) in paramlist {
-                            if option_param.is_some() {
-                                matches.append(&mut extract_targets_from_node(
-                                    targets,
-                                    option_param.unwrap().ty.into(),
-                                ));
-                            }
-                        }
-
-                        matches.append(&mut extract_targets_from_node(
-                            targets,
-                            box_statement.into(),
-                        ));
-                    }
-                }
-
-                _ => {
-                    //Assembly block
-                    //Continue
-                    //Break
                 }
             }
-        }
+
+            pt::Statement::Return(_, option_expression) => {
+                if option_expression.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_expression.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::Statement::Revert(_, option_identifier_path, vec_expression) => {
+                for expression in vec_expression {
+                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                }
+            }
+
+            pt::Statement::Emit(_, expression) => {
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+            }
+
+            pt::Statement::RevertNamedArgs(_, option_identifier_path, vec_named_arguments) => {
+                for named_argument in vec_named_arguments {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        named_argument.expr.into(),
+                    ));
+                }
+            }
+
+            pt::Statement::Expression(_, expression) => {
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+            }
+
+            pt::Statement::VariableDefinition(_, variable_declaration, option_expression) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    variable_declaration.ty.into(),
+                ));
+
+                if option_expression.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_expression.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::Statement::Block {
+                loc,
+                unchecked,
+                statements,
+            } => {
+                for statement in statements {
+                    matches.append(&mut extract_targets_from_node(targets, statement.into()));
+                }
+            }
+
+            pt::Statement::If(_, expression, box_statement, option_box_statement) => {
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_statement.into(),
+                ));
+
+                if option_box_statement.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_statement.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::Statement::While(_, expression, box_statement) => {
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_statement.into(),
+                ));
+            }
+
+            pt::Statement::For(
+                _,
+                option_box_statement,
+                option_box_expression,
+                option_box_statement_1,
+                option_box_statement_2,
+            ) => {
+                if option_box_statement.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_statement.unwrap().into(),
+                    ));
+                }
+
+                if option_box_expression.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_expression.unwrap().into(),
+                    ));
+                }
+
+                if option_box_statement_1.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_statement_1.unwrap().into(),
+                    ));
+                }
+                if option_box_statement_2.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        option_box_statement_2.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::Statement::DoWhile(_, box_statement, expression) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_statement.into(),
+                ));
+
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+            }
+
+            pt::Statement::Try(_, expression, option_paramlist_box_statement, _) => {
+                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+
+                if option_paramlist_box_statement.is_some() {
+                    let (paramlist, box_statement) = option_paramlist_box_statement.unwrap();
+
+                    for (_, option_param) in paramlist {
+                        if option_param.is_some() {
+                            matches.append(&mut extract_targets_from_node(
+                                targets,
+                                option_param.unwrap().ty.into(),
+                            ));
+                        }
+                    }
+
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_statement.into(),
+                    ));
+                }
+            }
+
+            _ => {
+                //Assembly block
+                //Continue
+                //Break
+            }
+        },
+
         Node::Expression(expression) => match expression {
             pt::Expression::Add(_, box_expression, box_expression_1) => {
                 matches.append(&mut extract_targets_from_node(
