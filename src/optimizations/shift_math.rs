@@ -1,96 +1,99 @@
-// // use std::collections::HashMap;
-// // use std::vec;
+// use std::collections::HashMap;
+// use std::vec;
 
-// // use crate::parser::solga_helpers::{
-// //     extract_expressions_from_statement, parse_file_for_source_unit,
-// // };
+// use crate::parser::solga_helpers::{
+//     extract_expressions_from_statement, parse_file_for_source_unit,
+// };
 
-// use solang_parser::pt::{ContractPart, Expression, Loc, Type};
-// use solang_parser::{self, pt::SourceUnit, pt::SourceUnitPart};
+use std::collections::HashSet;
+use std::u32;
 
-// use crate::ast::parse::extract_targets_from_node;
+use solang_parser::pt::{Expression, Loc};
+use solang_parser::{self, pt::SourceUnit};
 
-// ///Identifiy opportunities to pack structs to save gas
-// pub fn analyze_for_mul_2_optimization(source_unit: SourceUnit) -> HashMap<Loc, Loc> {
-//     let mut optimization_locations: HashMap<Loc, Loc> = HashMap::new();
+use crate::ast::ast::{self, Target};
 
-//     //for each source unit part
-//     for source_unit_part in source_unit.0 {
-//         //check the file for contract definitions
-//         if let SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
-//             //check each contract definition part
-//             for part in contract_definition.parts {
-//                 //if the contract part is a function definition
-//                 if let ContractPart::FunctionDefinition(function_definition) = part {
-//                     //if there is function body
-//                     if function_definition.body.is_some() {
-//                         //get the function body statement type
-//                         let function_body_statement = function_definition.body.unwrap();
+pub fn shift_math_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
+    let mut optimization_locations: HashSet<Loc> = HashSet::new();
 
-//                         //extract the expressions from the function body statement
-//                         let expressions = extract_targets_from_node(function_body_statement);
+    let target_nodes =
+        ast::extract_targets_from_node(vec![Target::Multiply, Target::Divide], source_unit.into());
 
-//                         //for each extracted expression, look for instances of expr*2 or 2*expr
-//                         for expression in expressions {
-//                             if let Expression::Multiply(loc, box_expression, box_expression_1) =
-//                                 expression
-//                             {
-//                                 //create a boolean to determine if mul_2 is present
-//                                 let mut mul_2: bool = false;
+    for node in target_nodes {
+        //We can use expect because both Target::Multiply and Target::Divide are expressions
+        let expression = node.expression().expect("Node was not an expression");
 
-//                                 //if the first expression is a number literal with a value of "2"
-//                                 if let Expression::NumberLiteral(_, val_string, _) = *box_expression
-//                                 {
-//                                     if val_string == "2".to_string() {
-//                                         //set mul_2 to true
-//                                         mul_2 = true;
-//                                     }
-//                                 }
+        match expression {
+            Expression::Multiply(loc, box_expression, box_expression_1) => {
+                if check_if_inputs_are_power_of_two(box_expression, box_expression_1) {
+                    optimization_locations.insert(loc);
+                }
+            }
 
-//                                 //else if  second expression is a number literal with a value of "2"
-//                                 if let Expression::NumberLiteral(_, val_string, _) =
-//                                     *box_expression_1
-//                                 {
-//                                     if val_string == "2".to_string() {
-//                                         //set mul_2 to true
-//                                         mul_2 = true;
-//                                     }
-//                                 }
+            Expression::Divide(loc, box_expression, box_expression_1) => {
+                if check_if_inputs_are_power_of_two(box_expression, box_expression_1) {
+                    optimization_locations.insert(loc);
+                }
+            }
 
-//                                 //if mul_2 is true, push the location of the optimization match
-//                                 if mul_2 {
-//                                     optimization_locations.insert(loc, loc);
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     optimization_locations
-// }
+            _ => {}
+        }
+    }
+    optimization_locations
+}
 
-// #[test]
-// fn test_analyze_for_mul_2_optimization() {
-//     let file_contents = r#"
+fn check_if_inputs_are_power_of_two(
+    box_expression: Box<Expression>,
+    box_expression_1: Box<Expression>,
+) -> bool {
+    //create a boolean to determine if either of the inputs are a power of two
+    let mut is_even: bool = false;
 
-//     contract Contract0 {
+    //if the first expression is a number literal that is a power of 2
+    if let Expression::NumberLiteral(_, val_string, _) = *box_expression {
+        let value = val_string
+            .parse::<u32>()
+            .expect("Could not parse NumberLiteral value from string to u32");
 
-//         function mul2(uint256 a, uint256 b) public pure {
-//             uint256 a = 10 * 2;
+        if (value != 0) && ((value & (value - 1)) == 0) {
+            is_even = true;
+        }
+    }
 
-//             uint256 b = 2 * a;
-//             uint256 c = a * b;
+    //if the first expression is a number literal that is a power of 2
+    if let Expression::NumberLiteral(_, val_string, _) = *box_expression_1 {
+        let value = val_string
+            .parse::<u32>()
+            .expect("Could not parse NumberLiteral value from string to u32");
 
-//             uint256 d = (a * b) * 2;
-//         }
-//     }
-//     "#;
+        if (value != 0) && ((value & (value - 1)) == 0) {
+            is_even = true;
+        }
+    }
 
-//     let source_unit = parse_file_for_source_unit(file_contents, 0);
+    is_even
+}
 
-//     let optimization_locations = analyze_for_mul_2_optimization(source_unit);
+#[test]
+fn test_analyze_for_mul_2_optimization() {
+    let file_contents = r#"
 
-//     assert_eq!(optimization_locations.len(), 3)
-// }
+    contract Contract0 {
+
+        function mul2(uint256 a, uint256 b) public pure {
+            uint256 a = 10 * 2;
+
+            uint256 b = 2 * a;
+            uint256 c = a * b;
+
+            uint256 d = (a * b) * 2;
+        }
+    }
+    "#;
+
+    let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
+
+    let optimization_locations = shift_math_optimization(source_unit);
+
+    assert_eq!(optimization_locations.len(), 3)
+}

@@ -2,6 +2,8 @@ use std::{collections::HashSet, vec};
 
 use solang_parser::pt;
 
+use super::node::Node;
+
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Target {
     //Statement Targets
@@ -84,6 +86,7 @@ pub enum Target {
     This,
 
     //Source Unit / Contract Part
+    SourceUnit,
     ContractDefinition,
     EnumDefinition,
     EventDefinition,
@@ -98,6 +101,16 @@ pub enum Target {
 
     //If there is no target that corresponds
     None,
+}
+
+pub fn new_targets(targets: Vec<Target>) -> HashSet<Target> {
+    let mut target_set = HashSet::new();
+
+    for target in targets {
+        target_set.insert(target);
+    }
+
+    target_set
 }
 
 pub fn statement_as_target(statement: &pt::Statement) -> Target {
@@ -189,7 +202,7 @@ pub fn expression_as_target(expression: &pt::Expression) -> Target {
     }
 }
 
-fn source_unit_part_as_target(source_unit_part: &pt::SourceUnitPart) -> Target {
+pub fn source_unit_part_as_target(source_unit_part: &pt::SourceUnitPart) -> Target {
     match source_unit_part {
         pt::SourceUnitPart::ContractDefinition(_) => Target::ContractDefinition,
         pt::SourceUnitPart::EnumDefinition(_) => Target::EnumDefinition,
@@ -205,7 +218,7 @@ fn source_unit_part_as_target(source_unit_part: &pt::SourceUnitPart) -> Target {
         pt::SourceUnitPart::VariableDefinition(_) => Target::VariableDefinition,
     }
 }
-fn contract_part_as_target(contract_part: &pt::ContractPart) -> Target {
+pub fn contract_part_as_target(contract_part: &pt::ContractPart) -> Target {
     match contract_part {
         pt::ContractPart::EnumDefinition(_) => Target::EnumDefinition,
         pt::ContractPart::ErrorDefinition(_) => Target::ErrorDefinition,
@@ -219,105 +232,25 @@ fn contract_part_as_target(contract_part: &pt::ContractPart) -> Target {
     }
 }
 
-impl Node {
-    pub fn as_target(&self) -> Target {
-        match &self {
-            Self::Expression(expression) => return expression_as_target(expression),
-            Self::Statement(statement) => return statement_as_target(statement),
-            Self::SourceUnitPart(source_unit_part) => {
-                return source_unit_part_as_target(source_unit_part)
-            }
-            Self::ContractPart(contract_part) => return contract_part_as_target(contract_part),
-        }
-    }
+pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
+    let mut target_set = HashSet::new();
+    target_set.insert(target);
+
+    return walk_node_for_targets(&target_set, node);
 }
 
-// impl Into<Target> for pt::Statement {
-//     fn into(self) -> Target {
-//         statement_to_target(self)
-//     }
-// }
-
-// impl Into<Target> for pt::Expression {
-//     fn into(self) -> Target {
-//         expression_to_target(self)
-//     }
-// }
-
-// impl Into<Target> for pt::ContractPart {
-//     fn into(self) -> Target {
-//         contract_part_to_target(self)
-//     }
-// }
-
-// impl Into<Target> for pt::SourceUnitPart {
-//     fn into(self) -> Target {
-//         source_unit_part_to_target(self)
-//     }
-// }
-
-#[derive(PartialEq, Clone)]
-pub enum Node {
-    Statement(pt::Statement),
-    Expression(pt::Expression),
-    SourceUnitPart(pt::SourceUnitPart),
-    ContractPart(pt::ContractPart),
-}
-
-impl Into<Node> for pt::Statement {
-    fn into(self) -> Node {
-        Node::Statement(self)
-    }
-}
-
-impl Into<Node> for Box<pt::Statement> {
-    fn into(self) -> Node {
-        Node::Statement(*self)
-    }
-}
-
-impl Into<Node> for pt::Expression {
-    fn into(self) -> Node {
-        Node::Expression(self)
-    }
-}
-impl Into<Node> for Box<pt::Expression> {
-    fn into(self) -> Node {
-        Node::Expression(*self)
-    }
-}
-
-impl Into<Node> for pt::ContractPart {
-    fn into(self) -> Node {
-        Node::ContractPart(self)
-    }
-}
-
-impl Into<Node> for pt::SourceUnitPart {
-    fn into(self) -> Node {
-        Node::SourceUnitPart(self)
-    }
-}
-
-pub fn new_target_set(targets: Vec<Target>) -> HashSet<Target> {
+pub fn extract_targets_from_node(targets: Vec<Target>, node: Node) -> Vec<Node> {
     let mut target_set = HashSet::new();
 
     for target in targets {
         target_set.insert(target);
     }
 
-    target_set
-}
-
-pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
-    let mut targets = HashSet::new();
-    targets.insert(target);
-
-    return extract_targets_from_node(&targets, node);
+    return walk_node_for_targets(&target_set, node);
 }
 
 //Extract target ast node types from a parent node
-pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<Node> {
+pub fn walk_node_for_targets(targets: &HashSet<Target>, node: Node) -> Vec<Node> {
     let mut matches = vec![];
 
     if targets.contains(&node.as_target()) {
@@ -325,6 +258,11 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
     }
 
     match node {
+        Node::SourceUnit(source_unit) => {
+            for source_unit_part in source_unit.0 {
+                matches.append(&mut walk_node_for_targets(targets, source_unit_part.into()));
+            }
+        }
         Node::SourceUnitPart(source_unit_part) => match source_unit_part {
             pt::SourceUnitPart::ContractDefinition(box_contract_definition) => {
                 //Walk the contract definition base for targets
@@ -333,20 +271,20 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                         let args = base.args.unwrap();
 
                         for arg in args {
-                            matches.append(&mut extract_targets_from_node(targets, arg.into()));
+                            matches.append(&mut walk_node_for_targets(targets, arg.into()));
                         }
                     }
                 }
 
                 //Walk the contract definition parts for targets
                 for part in box_contract_definition.parts {
-                    matches.append(&mut extract_targets_from_node(targets, part.into()));
+                    matches.append(&mut walk_node_for_targets(targets, part.into()));
                 }
             }
 
             pt::SourceUnitPart::ErrorDefinition(box_error_definition) => {
                 for error_parameter in box_error_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         error_parameter.ty.into(),
                     ));
@@ -355,7 +293,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::SourceUnitPart::EventDefinition(box_event_definition) => {
                 for event_parameter in box_event_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         event_parameter.ty.into(),
                     ));
@@ -366,7 +304,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 //Walk params for targets
                 for (_, option_parameter) in box_function_definition.params {
                     if option_parameter.is_some() {
-                        matches.append(&mut extract_targets_from_node(
+                        matches.append(&mut walk_node_for_targets(
                             targets,
                             option_parameter.unwrap().ty.into(),
                         ));
@@ -375,7 +313,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 //Walk return params for targets
                 for (_, option_parameter) in box_function_definition.returns {
                     if option_parameter.is_some() {
-                        matches.append(&mut extract_targets_from_node(
+                        matches.append(&mut walk_node_for_targets(
                             targets,
                             option_parameter.unwrap().ty.into(),
                         ));
@@ -384,7 +322,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
                 //Walk the function body for targets
                 if box_function_definition.body.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_function_definition.body.unwrap().into(),
                     ));
@@ -393,7 +331,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::SourceUnitPart::StructDefinition(box_struct_definition) => {
                 for variable_declaration in box_struct_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         variable_declaration.ty.into(),
                     ));
@@ -401,7 +339,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::SourceUnitPart::TypeDefinition(box_type_definition) => {
-                matches.append(&mut extract_targets_from_node(
+                matches.append(&mut walk_node_for_targets(
                     targets,
                     box_type_definition.ty.into(),
                 ));
@@ -409,20 +347,20 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::SourceUnitPart::Using(box_using) => {
                 if box_using.ty.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_using.ty.unwrap().into(),
                     ));
                 }
             }
             pt::SourceUnitPart::VariableDefinition(box_variable_definition) => {
-                matches.append(&mut extract_targets_from_node(
+                matches.append(&mut walk_node_for_targets(
                     targets,
                     box_variable_definition.ty.into(),
                 ));
 
                 if box_variable_definition.initializer.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_variable_definition.initializer.unwrap().into(),
                     ));
@@ -440,7 +378,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
         Node::ContractPart(contract_part) => match contract_part {
             pt::ContractPart::ErrorDefinition(box_error_definition) => {
                 for error_parameter in box_error_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         error_parameter.ty.into(),
                     ));
@@ -449,7 +387,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::ContractPart::EventDefinition(box_event_definition) => {
                 for event_parameter in box_event_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         event_parameter.ty.into(),
                     ));
@@ -460,7 +398,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 //Walk params for targets
                 for (_, option_parameter) in box_function_definition.params {
                     if option_parameter.is_some() {
-                        matches.append(&mut extract_targets_from_node(
+                        matches.append(&mut walk_node_for_targets(
                             targets,
                             option_parameter.unwrap().ty.into(),
                         ));
@@ -469,7 +407,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 //Walk return params for targets
                 for (_, option_parameter) in box_function_definition.returns {
                     if option_parameter.is_some() {
-                        matches.append(&mut extract_targets_from_node(
+                        matches.append(&mut walk_node_for_targets(
                             targets,
                             option_parameter.unwrap().ty.into(),
                         ));
@@ -478,7 +416,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
                 //Walk the function body for targets
                 if box_function_definition.body.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_function_definition.body.unwrap().into(),
                     ));
@@ -487,7 +425,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::ContractPart::StructDefinition(box_struct_definition) => {
                 for variable_declaration in box_struct_definition.fields {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         variable_declaration.ty.into(),
                     ));
@@ -495,7 +433,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::ContractPart::TypeDefinition(box_type_definition) => {
-                matches.append(&mut extract_targets_from_node(
+                matches.append(&mut walk_node_for_targets(
                     targets,
                     box_type_definition.ty.into(),
                 ));
@@ -503,20 +441,20 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::ContractPart::Using(box_using) => {
                 if box_using.ty.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_using.ty.unwrap().into(),
                     ));
                 }
             }
             pt::ContractPart::VariableDefinition(box_variable_definition) => {
-                matches.append(&mut extract_targets_from_node(
+                matches.append(&mut walk_node_for_targets(
                     targets,
                     box_variable_definition.ty.into(),
                 ));
 
                 if box_variable_definition.initializer.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         box_variable_definition.initializer.unwrap().into(),
                     ));
@@ -532,16 +470,13 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
         Node::Statement(statement) => match statement {
             pt::Statement::Args(_, named_arguments) => {
                 for argument in named_arguments {
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        argument.expr.into(),
-                    ));
+                    matches.append(&mut walk_node_for_targets(targets, argument.expr.into()));
                 }
             }
 
             pt::Statement::Return(_, option_expression) => {
                 if option_expression.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_expression.unwrap().into(),
                     ));
@@ -550,17 +485,17 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
             pt::Statement::Revert(_, _, vec_expression) => {
                 for expression in vec_expression {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                    matches.append(&mut walk_node_for_targets(targets, expression.into()));
                 }
             }
 
             pt::Statement::Emit(_, expression) => {
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
             }
 
             pt::Statement::RevertNamedArgs(_, _, vec_named_arguments) => {
                 for named_argument in vec_named_arguments {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         named_argument.expr.into(),
                     ));
@@ -568,17 +503,17 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Statement::Expression(_, expression) => {
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
             }
 
             pt::Statement::VariableDefinition(_, variable_declaration, option_expression) => {
-                matches.append(&mut extract_targets_from_node(
+                matches.append(&mut walk_node_for_targets(
                     targets,
                     variable_declaration.ty.into(),
                 ));
 
                 if option_expression.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_expression.unwrap().into(),
                     ));
@@ -591,20 +526,17 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 statements,
             } => {
                 for statement in statements {
-                    matches.append(&mut extract_targets_from_node(targets, statement.into()));
+                    matches.append(&mut walk_node_for_targets(targets, statement.into()));
                 }
             }
 
             pt::Statement::If(_, expression, box_statement, option_box_statement) => {
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_statement.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_statement.into()));
 
                 if option_box_statement.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_statement.unwrap().into(),
                     ));
@@ -612,12 +544,9 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Statement::While(_, expression, box_statement) => {
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_statement.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_statement.into()));
             }
 
             pt::Statement::For(
@@ -628,27 +557,27 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 option_box_statement_2,
             ) => {
                 if option_box_statement.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_statement.unwrap().into(),
                     ));
                 }
 
                 if option_box_expression.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_expression.unwrap().into(),
                     ));
                 }
 
                 if option_box_statement_1.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_statement_1.unwrap().into(),
                     ));
                 }
                 if option_box_statement_2.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_statement_2.unwrap().into(),
                     ));
@@ -656,33 +585,27 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Statement::DoWhile(_, box_statement, expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_statement.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_statement.into()));
 
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
             }
 
             pt::Statement::Try(_, expression, option_paramlist_box_statement, _) => {
-                matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, expression.into()));
 
                 if option_paramlist_box_statement.is_some() {
                     let (paramlist, box_statement) = option_paramlist_box_statement.unwrap();
 
                     for (_, option_param) in paramlist {
                         if option_param.is_some() {
-                            matches.append(&mut extract_targets_from_node(
+                            matches.append(&mut walk_node_for_targets(
                                 targets,
                                 option_param.unwrap().ty.into(),
                             ));
                         }
                     }
 
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_statement.into(),
-                    ));
+                    matches.append(&mut walk_node_for_targets(targets, box_statement.into()));
                 }
             }
 
@@ -695,32 +618,20 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
         Node::Expression(expression) => match expression {
             pt::Expression::Add(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::And(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::ArrayLiteral(_, vec_expression) => {
                 for expression in vec_expression {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                    matches.append(&mut walk_node_for_targets(targets, expression.into()));
                 }
             }
 
@@ -730,33 +641,27 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 option_box_expression,
                 option_box_expression_1,
             ) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
                 if option_box_expression.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_expression.unwrap().into(),
                     ));
                 }
 
                 if option_box_expression_1.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_expression_1.unwrap().into(),
                     ));
                 }
             }
             pt::Expression::ArraySubscript(_, box_expression, option_box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
                 if option_box_expression.is_some() {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         option_box_expression.unwrap().into(),
                     ));
@@ -764,305 +669,151 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Expression::Assign(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignAdd(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
             pt::Expression::AssignAnd(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignDivide(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignModulo(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignMultiply(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignOr(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
             pt::Expression::AssignShiftLeft(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignShiftRight(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::AssignSubtract(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
             pt::Expression::AssignXor(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::BitwiseAnd(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::BitwiseOr(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::BitwiseXor(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Complement(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::Delete(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
             pt::Expression::Divide(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Equal(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::FunctionCall(_, box_expression, vec_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
                 for expression in vec_expression {
-                    matches.append(&mut extract_targets_from_node(targets, expression.into()));
+                    matches.append(&mut walk_node_for_targets(targets, expression.into()));
                 }
             }
 
             pt::Expression::FunctionCallBlock(_, box_expression, box_statement) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_statement.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_statement.into()));
             }
 
             pt::Expression::Less(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::LessEqual(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::List(_, parameter_list) => {
                 for (_, option_parameter) in parameter_list {
                     if option_parameter.is_some() {
                         let parameter = option_parameter.unwrap();
-                        matches
-                            .append(&mut extract_targets_from_node(targets, parameter.ty.into()));
+                        matches.append(&mut walk_node_for_targets(targets, parameter.ty.into()));
                     }
                 }
             }
 
             pt::Expression::MemberAccess(_, box_expression, _) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::Modulo(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::More(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
             pt::Expression::MoreEqual(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Multiply(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::NamedFunctionCall(_, box_expression, vec_named_argument) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
                 for named_argument in vec_named_argument {
-                    matches.append(&mut extract_targets_from_node(
+                    matches.append(&mut walk_node_for_targets(
                         targets,
                         named_argument.expr.into(),
                     ));
@@ -1070,119 +821,59 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             }
 
             pt::Expression::New(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
             pt::Expression::Not(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
             pt::Expression::NotEqual(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Or(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Parenthesis(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::PostDecrement(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::PostIncrement(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::ShiftLeft(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::ShiftRight(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
             pt::Expression::Subtract(_, box_expression, box_expression_1) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
             }
 
             pt::Expression::Ternary(_, box_expression, box_expression_1, box_expression_2) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_1.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
 
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression_2.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression_2.into()));
             }
             pt::Expression::Type(_, ty) => match ty {
                 pt::Type::Mapping(_, box_expression, box_expression_1) => {
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_expression.into(),
-                    ));
+                    matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
 
-                    matches.append(&mut extract_targets_from_node(
-                        targets,
-                        box_expression_1.into(),
-                    ));
+                    matches.append(&mut walk_node_for_targets(targets, box_expression_1.into()));
                 }
 
                 pt::Type::Function {
@@ -1192,7 +883,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                 } => {
                     for param in params {
                         if param.1.is_some() {
-                            matches.append(&mut extract_targets_from_node(
+                            matches.append(&mut walk_node_for_targets(
                                 targets,
                                 param.1.unwrap().ty.into(),
                             ));
@@ -1204,7 +895,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                             pt::FunctionAttribute::BaseOrModifier(_, base) => {
                                 if base.args.is_some() {
                                     for arg in base.args.unwrap() {
-                                        matches.append(&mut extract_targets_from_node(
+                                        matches.append(&mut walk_node_for_targets(
                                             targets,
                                             arg.into(),
                                         ));
@@ -1213,10 +904,8 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                             }
 
                             pt::FunctionAttribute::NameValue(_, _, expression) => {
-                                matches.append(&mut extract_targets_from_node(
-                                    targets,
-                                    expression.into(),
-                                ));
+                                matches
+                                    .append(&mut walk_node_for_targets(targets, expression.into()));
                             }
                             _ => {}
                         }
@@ -1227,7 +916,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
 
                         for (_, option_parameter) in parameter_list {
                             if option_parameter.is_some() {
-                                matches.append(&mut extract_targets_from_node(
+                                matches.append(&mut walk_node_for_targets(
                                     targets,
                                     option_parameter.unwrap().ty.into(),
                                 ));
@@ -1239,7 +928,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                                 pt::FunctionAttribute::BaseOrModifier(_, base) => {
                                     if base.args.is_some() {
                                         for arg in base.args.unwrap() {
-                                            matches.append(&mut extract_targets_from_node(
+                                            matches.append(&mut walk_node_for_targets(
                                                 targets,
                                                 arg.into(),
                                             ));
@@ -1248,7 +937,7 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
                                 }
 
                                 pt::FunctionAttribute::NameValue(_, _, expression) => {
-                                    matches.append(&mut extract_targets_from_node(
+                                    matches.append(&mut walk_node_for_targets(
                                         targets,
                                         expression.into(),
                                     ));
@@ -1263,23 +952,14 @@ pub fn extract_targets_from_node(targets: &HashSet<Target>, node: Node) -> Vec<N
             },
 
             pt::Expression::UnaryMinus(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
             pt::Expression::UnaryPlus(_, box_expression) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
 
             pt::Expression::Unit(_, box_expression, _) => {
-                matches.append(&mut extract_targets_from_node(
-                    targets,
-                    box_expression.into(),
-                ));
+                matches.append(&mut walk_node_for_targets(targets, box_expression.into()));
             }
             _ => {
                 //Address literal
