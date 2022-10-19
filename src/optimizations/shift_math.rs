@@ -8,7 +8,7 @@
 use solang_parser::pt::{ContractPart, Expression, Loc, Type};
 use solang_parser::{self, pt::SourceUnit, pt::SourceUnitPart};
 
-use crate::parser::parse::extract_targets_from_node;
+use crate::ast::parse::extract_targets_from_node;
 
 ///Identifiy opportunities to pack structs to save gas
 pub fn analyze_for_mul_2_optimization(source_unit: SourceUnit) -> HashMap<Loc, Loc> {

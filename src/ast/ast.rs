@@ -24,11 +24,13 @@ pub enum Target {
 
     //Expression Targets
     Add,
+    And,
     ArrayLiteral,
     ArraySlice,
     ArraySubscript,
     Assign,
     AssignAdd,
+    AssignAnd,
     AssignDivide,
     AssignModulo,
     AssignMultiply,
@@ -51,6 +53,7 @@ pub enum Target {
     List,
     MemberAccess,
     Modulo,
+    More,
     MoreEqual,
     Multiply,
     NamedFunctionCall,
@@ -61,6 +64,8 @@ pub enum Target {
     Parenthesis,
     PostDecrement,
     PostIncrement,
+    PreIncrement,
+    PreDecrement,
     ShiftLeft,
     ShiftRight,
     Subtract,
@@ -70,6 +75,31 @@ pub enum Target {
     UnaryMinus,
     UnaryPlus,
     Unit,
+    Power,
+    BoolLiteral,
+    NumberLiteral,
+    RationalNumberLiteral,
+    HexNumberLiteral,
+    HexLiteral,
+    StringLiteral,
+    AddressLiteral,
+    Variable,
+    This,
+
+    //Source Unit Part
+    ContractDefinition,
+    EnumDefinition,
+    EventDefinition,
+    ErrorDefinition,
+    FunctionDefinition,
+    ImportDirective,
+    PragmaDirective,
+    StraySemicolon,
+    StructDefinition,
+    TypeDefinition,
+    Using,
+
+    //Contract Part
 
     //If there is no target that corresponds
     None,
@@ -99,7 +129,99 @@ pub fn statement_to_target(statement: pt::Statement) -> Target {
 }
 
 pub fn expression_to_target(expression: pt::Expression) -> Target {
-    Target::None
+    match expression {
+        pt::Expression::Add(_, _, _) => Target::Add,
+        pt::Expression::And(_, _, _) => Target::And,
+        pt::Expression::ArrayLiteral(_, _) => Target::ArrayLiteral,
+        pt::Expression::ArraySlice(_, _, _, _) => Target::ArraySlice,
+        pt::Expression::ArraySubscript(_, _, _) => Target::ArraySubscript,
+        pt::Expression::Assign(_, _, _) => Target::Assign,
+        pt::Expression::AssignAdd(_, _, _) => Target::AssignAdd,
+        pt::Expression::AssignAnd(_, _, _) => Target::AssignAnd,
+        pt::Expression::AssignDivide(_, _, _) => Target::AssignDivide,
+        pt::Expression::AssignModulo(_, _, _) => Target::AssignModulo,
+        pt::Expression::AssignMultiply(_, _, _) => Target::AssignMultiply,
+        pt::Expression::AssignOr(_, _, _) => Target::AssignOr,
+        pt::Expression::AssignShiftLeft(_, _, _) => Target::AssignShiftLeft,
+        pt::Expression::AssignShiftRight(_, _, _) => Target::AssignShiftRight,
+        pt::Expression::AssignSubtract(_, _, _) => Target::AssignSubtract,
+        pt::Expression::AssignXor(_, _, _) => Target::AssignXor,
+        pt::Expression::BitwiseAnd(_, _, _) => Target::BitwiseAnd,
+        pt::Expression::BitwiseOr(_, _, _) => Target::BitwiseOr,
+        pt::Expression::BitwiseXor(_, _, _) => Target::BitwiseXor,
+        pt::Expression::Complement(_, _) => Target::Complement,
+        pt::Expression::Delete(_, _) => Target::Delete,
+        pt::Expression::Divide(_, _, _) => Target::Divide,
+        pt::Expression::Equal(_, _, _) => Target::Equal,
+        pt::Expression::FunctionCall(_, _, _) => Target::FunctionCall,
+        pt::Expression::FunctionCallBlock(_, _, _) => Target::FunctionCallBlock,
+        pt::Expression::Less(_, _, _) => Target::Less,
+        pt::Expression::LessEqual(_, _, _) => Target::LessEqual,
+        pt::Expression::List(_, _) => Target::List,
+        pt::Expression::MemberAccess(_, _, _) => Target::MemberAccess,
+        pt::Expression::Modulo(_, _, _) => Target::Modulo,
+        pt::Expression::More(_, _, _) => Target::More,
+        pt::Expression::MoreEqual(_, _, _) => Target::MoreEqual,
+        pt::Expression::Multiply(_, _, _) => Target::Multiply,
+        pt::Expression::NamedFunctionCall(_, _, _) => Target::NamedFunctionCall,
+        pt::Expression::New(_, _) => Target::New,
+        pt::Expression::Not(_, _) => Target::Not,
+        pt::Expression::NotEqual(_, _, _) => Target::NotEqual,
+        pt::Expression::Or(_, _, _) => Target::Or,
+        pt::Expression::Parenthesis(_, _) => Target::Parenthesis,
+        pt::Expression::PostDecrement(_, _) => Target::PostDecrement,
+        pt::Expression::PostIncrement(_, _) => Target::PostIncrement,
+        pt::Expression::ShiftLeft(_, _, _) => Target::ShiftLeft,
+        pt::Expression::ShiftRight(_, _, _) => Target::ShiftRight,
+        pt::Expression::Subtract(_, _, _) => Target::Subtract,
+        pt::Expression::Ternary(_, _, _, _) => Target::Ternary,
+        pt::Expression::Type(_, ty) => Target::Type,
+        pt::Expression::UnaryMinus(_, _) => Target::UnaryMinus,
+        pt::Expression::UnaryPlus(_, _) => Target::UnaryPlus,
+        pt::Expression::Unit(_, _, _) => Target::Unit,
+        pt::Expression::PreIncrement(_, _) => Target::PreIncrement,
+        pt::Expression::PreDecrement(_, _) => Target::PreDecrement,
+        pt::Expression::Power(_, _, _) => Target::Power,
+        pt::Expression::BoolLiteral(_, _) => Target::BoolLiteral,
+        pt::Expression::NumberLiteral(_, _, _) => Target::NumberLiteral,
+        pt::Expression::RationalNumberLiteral(_, _, _, _) => Target::RationalNumberLiteral,
+        pt::Expression::HexNumberLiteral(_, _) => Target::HexNumberLiteral,
+        pt::Expression::HexLiteral(_) => Target::HexLiteral,
+        pt::Expression::StringLiteral(_) => Target::StringLiteral,
+        pt::Expression::AddressLiteral(_, _) => Target::AddressLiteral,
+        pt::Expression::Variable(_) => Target::Variable,
+        pt::Expression::This(_) => Target::This,
+    }
+}
+
+fn source_unit_part_to_target(source_unit_part: pt::SourceUnitPart) -> Target {
+    match source_unit_part {
+        pt::SourceUnitPart::ContractDefinition(_) => Target::ContractDefinition,
+        pt::SourceUnitPart::EnumDefinition(_) => Target::EnumDefinition,
+        pt::SourceUnitPart::ErrorDefinition(_) => Target::ErrorDefinition,
+        pt::SourceUnitPart::EventDefinition(_) => Target::EventDefinition,
+        pt::SourceUnitPart::FunctionDefinition(_) => Target::FunctionDefinition,
+        pt::SourceUnitPart::ImportDirective(_) => Target::ImportDirective,
+        pt::SourceUnitPart::PragmaDirective(_, _, _) => Target::PragmaDirective,
+        pt::SourceUnitPart::StraySemicolon(_) => Target::StraySemicolon,
+        pt::SourceUnitPart::StructDefinition(_) => Target::StructDefinition,
+        pt::SourceUnitPart::TypeDefinition(_) => Target::TypeDefinition,
+        pt::SourceUnitPart::Using(_) => Target::Using,
+        pt::SourceUnitPart::VariableDefinition(_) => Target::VariableDefinition,
+    }
+}
+fn contract_part_to_target(contract_part: pt::ContractPart) -> Target {
+    match contract_part {
+        pt::ContractPart::EnumDefinition(_) => Target::EnumDefinition,
+        pt::ContractPart::ErrorDefinition(_) => Target::ErrorDefinition,
+        pt::ContractPart::EventDefinition(_) => Target::EventDefinition,
+        pt::ContractPart::FunctionDefinition(_) => Target::FunctionDefinition,
+        pt::ContractPart::StraySemicolon(_) => Target::StraySemicolon,
+        pt::ContractPart::StructDefinition(_) => Target::StructDefinition,
+        pt::ContractPart::TypeDefinition(_) => Target::TypeDefinition,
+        pt::ContractPart::Using(_) => Target::Using,
+        pt::ContractPart::VariableDefinition(_) => Target::VariableDefinition,
+    }
 }
 
 impl Into<Target> for Node {
@@ -107,6 +229,10 @@ impl Into<Target> for Node {
         match self {
             Self::Expression(expression) => return expression_to_target(expression),
             Self::Statement(statement) => return statement_to_target(statement),
+            Self::SourceUnitPart(source_unit_part) => {
+                return source_unit_part_to_target(source_unit_part)
+            }
+            Self::ContractPart(contract_part) => return contract_part_to_target(contract_part),
         }
     }
 }
@@ -126,6 +252,8 @@ impl Into<Target> for pt::Expression {
 pub enum Node {
     Statement(pt::Statement),
     Expression(pt::Expression),
+    SourceUnitPart(pt::SourceUnitPart),
+    ContractPart(pt::ContractPart), //TODO: conract part
 }
 
 impl Into<Node> for pt::Statement {
@@ -148,6 +276,16 @@ impl Into<Node> for Box<pt::Expression> {
     fn into(self) -> Node {
         Node::Expression(*self)
     }
+}
+
+pub fn new_target_set(targets: Vec<Target>) -> HashSet<Target> {
+    let targets = HashSet::new();
+
+    for target in targets {
+        targets.insert(target);
+    }
+
+    targets
 }
 
 pub fn extract_target_from_node(target: Target, node: Node) -> Vec<Node> {
