@@ -392,14 +392,139 @@ pub fn extract_targets_from_node(targets: HashSet<Target>, node: Node) -> Vec<No
                 }
             }
 
-            pt::SourceUnitPart::ImportDirective(import) => {}
-            pt::SourceUnitPart::StructDefinition(box_struct_definition) => {}
-            pt::SourceUnitPart::TypeDefinition(box_type_definition) => {}
-            pt::SourceUnitPart::Using(box_using) => {}
-            pt::SourceUnitPart::VariableDefinition(box_variable_definition) => {}
+            pt::SourceUnitPart::StructDefinition(box_struct_definition) => {
+                for variable_declaration in box_struct_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        variable_declaration.ty.into(),
+                    ));
+                }
+            }
+
+            pt::SourceUnitPart::TypeDefinition(box_type_definition) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_type_definition.ty.into(),
+                ));
+            }
+
+            pt::SourceUnitPart::Using(box_using) => {
+                if box_using.ty.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_using.ty.unwrap().into(),
+                    ));
+                }
+            }
+            pt::SourceUnitPart::VariableDefinition(box_variable_definition) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_variable_definition.ty.into(),
+                ));
+
+                if box_variable_definition.initializer.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_variable_definition.initializer.unwrap().into(),
+                    ));
+                }
+            }
 
             _ => {
                 //Pragma Directive
+                //Stray Semicolon
+                //EnumDefinition
+                //Import directive
+            }
+        },
+
+        Node::ContractPart(contract_part) => match contract_part {
+            pt::ContractPart::ErrorDefinition(box_error_definition) => {
+                for error_parameter in box_error_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        error_parameter.ty.into(),
+                    ));
+                }
+            }
+
+            pt::ContractPart::EventDefinition(box_event_definition) => {
+                for event_parameter in box_event_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        event_parameter.ty.into(),
+                    ));
+                }
+            }
+
+            pt::ContractPart::FunctionDefinition(box_function_definition) => {
+                //Walk params for targets
+                for (_, option_parameter) in box_function_definition.params {
+                    if option_parameter.is_some() {
+                        matches.append(&mut extract_targets_from_node(
+                            targets,
+                            option_parameter.unwrap().ty.into(),
+                        ));
+                    }
+                }
+                //Walk return params for targets
+                for (_, option_parameter) in box_function_definition.returns {
+                    if option_parameter.is_some() {
+                        matches.append(&mut extract_targets_from_node(
+                            targets,
+                            option_parameter.unwrap().ty.into(),
+                        ));
+                    }
+                }
+
+                //Walk the function body for targets
+                if box_function_definition.body.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_function_definition.body.unwrap().into(),
+                    ));
+                }
+            }
+
+            pt::ContractPart::StructDefinition(box_struct_definition) => {
+                for variable_declaration in box_struct_definition.fields {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        variable_declaration.ty.into(),
+                    ));
+                }
+            }
+
+            pt::ContractPart::TypeDefinition(box_type_definition) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_type_definition.ty.into(),
+                ));
+            }
+
+            pt::ContractPart::Using(box_using) => {
+                if box_using.ty.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_using.ty.unwrap().into(),
+                    ));
+                }
+            }
+            pt::ContractPart::VariableDefinition(box_variable_definition) => {
+                matches.append(&mut extract_targets_from_node(
+                    targets,
+                    box_variable_definition.ty.into(),
+                ));
+
+                if box_variable_definition.initializer.is_some() {
+                    matches.append(&mut extract_targets_from_node(
+                        targets,
+                        box_variable_definition.initializer.unwrap().into(),
+                    ));
+                }
+            }
+
+            _ => {
                 //Stray Semicolon
                 //EnumDefinition
             }
