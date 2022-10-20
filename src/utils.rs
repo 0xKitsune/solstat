@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use regex::Regex;
 use solang_parser::pt::{self, Loc, SourceUnit, SourceUnitPart};
 
-use crate::ast::ast::{extract_target_from_node, Target};
+use crate::ast::ast::{self, extract_target_from_node, Target};
 
 //Returns the size of the type in bytes
 pub fn get_type_size(expression: pt::Expression) -> u16 {
@@ -154,6 +154,35 @@ pub fn get_immutable_variables(source_unit: pt::SourceUnit) -> HashMap<String, L
 
     variables
 }
+
+//Returns minor, major, patch version from a contract file
+pub fn get_solidity_version_from_source_unit(source_unit: SourceUnit) -> Option<(i32, i32, i32)> {
+    let target_nodes =
+        ast::extract_target_from_node(Target::PragmaDirective, source_unit.clone().into());
+
+    //check if the solidity version is < 0.8.0
+    let mut solidity_minor_version: i32 = 0;
+    for node in target_nodes {
+        let source_unit_part = node.source_unit_part().unwrap();
+
+        if let SourceUnitPart::PragmaDirective(_, _, solidity_version_literal) = source_unit_part {
+            let minor_major_patch_version =
+                get_solidity_major_minor_patch_version(&solidity_version_literal.string)
+                    .iter()
+                    .map(|f| f.parse::<i32>().unwrap())
+                    .collect::<Vec<i32>>();
+
+            return Some((
+                minor_major_patch_version[0],
+                minor_major_patch_version[1],
+                minor_major_patch_version[2],
+            ));
+        }
+    }
+
+    None
+}
+
 pub fn get_solidity_major_version(solidity_version_str: &str) -> i32 {
     let major_minor_patch_vec = get_solidity_major_minor_patch_version(solidity_version_str);
     major_minor_patch_vec[0].parse::<i32>().unwrap()

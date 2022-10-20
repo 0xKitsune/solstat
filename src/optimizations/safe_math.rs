@@ -20,20 +20,10 @@ pub fn safe_math_post_080_optimization(source_unit: SourceUnit) -> HashSet<Loc> 
 pub fn safe_math_optimization(source_unit: SourceUnit, pre_080: bool) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
 
-    let target_nodes =
-        ast::extract_target_from_node(Target::PragmaDirective, source_unit.clone().into());
+    let solidity_version = utils::get_solidity_version_from_source_unit(source_unit.clone())
+        .expect("Could not extract solidity version from source unit");
 
-    //check if the solidity version is < 0.8.0
-    let mut solidity_minor_version: i32 = 0;
-    for node in target_nodes {
-        let source_unit_part = node.source_unit_part().unwrap();
-
-        if let SourceUnitPart::PragmaDirective(_, _, solidity_version) = source_unit_part {
-            solidity_minor_version = utils::get_solidity_minor_version(&solidity_version.string);
-        }
-    }
-
-    if (pre_080 && solidity_minor_version < 8) || (!pre_080 && solidity_minor_version >= 8) {
+    if (pre_080 && solidity_version.1 < 8) || (!pre_080 && solidity_version.1 >= 8) {
         //if using safe math
         if check_if_using_safe_math(source_unit.clone()) {
             //get all locations that safe math functions are used
