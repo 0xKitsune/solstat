@@ -10,25 +10,16 @@ use crate::utils;
 pub fn pack_struct_variables_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
 
-    let target_nodes = ast::extract_targets_from_node(
-        //Contract definition and Struct definition are targets since a struct definition can
-        //be inside or outside of the contract definition
-        vec![Target::ContractDefinition, Target::StructDefinition],
-        source_unit.into(),
-    );
+    let target_nodes = ast::extract_target_from_node(Target::StructDefinition, source_unit.into());
 
     for node in target_nodes {
         if node.is_source_unit_part() {
-            if let SourceUnitPart::ContractDefinition(contract_definition) =
+            if let SourceUnitPart::StructDefinition(struct_definition) =
                 node.source_unit_part().unwrap()
             {
-                for part in contract_definition.parts {
-                    if let ContractPart::StructDefinition(struct_definition) = part {
-                        let struct_location = struct_definition.loc;
-                        if struct_can_be_packed(*struct_definition) {
-                            optimization_locations.insert(struct_location);
-                        }
-                    }
+                let struct_location = struct_definition.loc;
+                if struct_can_be_packed(*struct_definition) {
+                    optimization_locations.insert(struct_location);
                 }
             }
         } else if node.is_contract_part() {
@@ -95,6 +86,7 @@ contract OrderRouter {
         address factoryAddress;
         bytes16 initBytecode;
     }
+    
 
     //should not match
     struct Ex3{
@@ -116,6 +108,7 @@ contract OrderRouter {
         uint256 thing1;
         uint128 thing2;
     }
+
   
 
 }

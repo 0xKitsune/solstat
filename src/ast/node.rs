@@ -66,7 +66,7 @@ impl Node {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Node {
     Statement(pt::Statement),
     Expression(pt::Expression),
