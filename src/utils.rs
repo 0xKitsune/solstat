@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+
 use regex::Regex;
-use solang_parser::pt;
+use solang_parser::pt::{self, Loc, SourceUnit, SourceUnitPart};
+
+use crate::ast::ast::{extract_target_from_node, Target};
 
 //Returns the size of the type in bytes
 pub fn get_type_size(expression: pt::Expression) -> u16 {
@@ -47,6 +51,109 @@ pub fn storage_slots_used(variables: Vec<u16>) -> u32 {
     slots_used
 }
 
+pub fn get_32_byte_storage_variables(
+    source_unit: pt::SourceUnit,
+    ignore_constants: bool,
+    ignore_immutables: bool,
+) -> HashMap<String, (Option<pt::VariableAttribute>, Loc)> {
+    let mut storage_variables: HashMap<String, (Option<pt::VariableAttribute>, Loc)> =
+        HashMap::new();
+
+    let target_nodes = extract_target_from_node(Target::ContractDefinition, source_unit.into());
+
+    for node in target_nodes {
+        let source_unit_part = node.source_unit_part().unwrap();
+
+        if let pt::SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
+            'outer: for part in contract_definition.parts {
+                if let pt::ContractPart::VariableDefinition(box_variable_definition) = part {
+                    let mut variable_attribute: Option<pt::VariableAttribute> = None;
+                    //if the variable is constant, mark constant_variable as true
+                    for attribute in box_variable_definition.attrs {
+                        if let pt::VariableAttribute::Constant(variable_attribute_loc) = attribute {
+                            if ignore_constants {
+                                continue 'outer;
+                            }
+                            variable_attribute =
+                                Some(pt::VariableAttribute::Constant(variable_attribute_loc));
+                        } else if let pt::VariableAttribute::Immutable(variable_attribute_loc) =
+                            attribute
+                        {
+                            if ignore_immutables {
+                                continue 'outer;
+                            }
+
+                            variable_attribute =
+                                Some(pt::VariableAttribute::Immutable(variable_attribute_loc));
+                        }
+                    }
+
+                    if let pt::Expression::Type(loc, ty) = box_variable_definition.ty {
+                        if let pt::Type::Mapping(_, _, _) = ty {
+                        } else {
+                            storage_variables.insert(
+                                box_variable_definition.name.name,
+                                (variable_attribute, loc),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    storage_variables
+}
+
+pub fn get_constant_variables(source_unit: pt::SourceUnit) -> HashMap<String, Loc> {
+    let mut variables: HashMap<String, Loc> = HashMap::new();
+
+    let target_nodes = extract_target_from_node(Target::ContractDefinition, source_unit.into());
+
+    for node in target_nodes {
+        let source_unit_part = node.source_unit_part().unwrap();
+
+        if let pt::SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
+            for part in contract_definition.parts {
+                if let pt::ContractPart::VariableDefinition(box_variable_definition) = part {
+                    //if the variable is constant, mark constant_variable as true
+                    for attribute in box_variable_definition.attrs {
+                        if let pt::VariableAttribute::Constant(loc) = attribute {
+                            variables.insert(box_variable_definition.name.to_string(), loc);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    variables
+}
+
+pub fn get_immutable_variables(source_unit: pt::SourceUnit) -> HashMap<String, Loc> {
+    let mut variables: HashMap<String, Loc> = HashMap::new();
+
+    let target_nodes = extract_target_from_node(Target::ContractDefinition, source_unit.into());
+
+    for node in target_nodes {
+        let source_unit_part = node.source_unit_part().unwrap();
+
+        if let pt::SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
+            for part in contract_definition.parts {
+                if let pt::ContractPart::VariableDefinition(box_variable_definition) = part {
+                    //if the variable is constant, mark constant_variable as true
+                    for attribute in box_variable_definition.attrs {
+                        if let pt::VariableAttribute::Immutable(loc) = attribute {
+                            variables.insert(box_variable_definition.name.to_string(), loc);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    variables
+}
 pub fn get_solidity_major_version(solidity_version_str: &str) -> i32 {
     let major_minor_patch_vec = get_solidity_major_minor_patch_version(solidity_version_str);
     major_minor_patch_vec[0].parse::<i32>().unwrap()

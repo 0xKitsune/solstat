@@ -14,25 +14,23 @@ pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
         //We can use unwrap because Target::FunctionCall is an expression
         let expression = node.expression().unwrap();
 
-        match expression {
-            Expression::FunctionCall(loc, function_identifier, function_call_expressions) => {
-                //if the function call identifier is a variable
-                if let Expression::Variable(identifier) = *function_identifier {
-                    //if the identifier name is "require"
-                    if identifier.name == "require".to_string() {
-                        //for each expression in the function call expressions
-                        for func_call_expression in function_call_expressions {
-                            //if there is an and expression (ie. &&)
-                            if let Expression::And(_, _, _) = func_call_expression {
-                                //add the location to the list of optimization locations
-                                optimization_locations.insert(loc);
-                            }
+        if let Expression::FunctionCall(loc, function_identifier, function_call_expressions) =
+            expression
+        {
+            //if the function call identifier is a variable
+            if let Expression::Variable(identifier) = *function_identifier {
+                //if the identifier name is "require"
+                if identifier.name == "require".to_string() {
+                    //for each expression in the function call expressions
+                    for func_call_expression in function_call_expressions {
+                        //if there is an and expression (ie. &&)
+                        if let Expression::And(_, _, _) = func_call_expression {
+                            //add the location to the list of optimization locations
+                            optimization_locations.insert(loc);
                         }
                     }
                 }
             }
-
-            _ => {}
         }
     }
 

@@ -32,6 +32,8 @@ pub fn pack_struct_variables_optimization(source_unit: SourceUnit) -> HashSet<Lo
                 }
             }
         } else if node.is_contract_part() {
+
+            //TODO:
         }
     }
     optimization_locations

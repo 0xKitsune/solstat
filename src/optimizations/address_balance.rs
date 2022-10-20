@@ -14,21 +14,17 @@ pub fn address_balance_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
         //We can use unwrap because Target::MemberAccess is an expression
         let expression = node.expression().unwrap();
 
-        match expression {
-            pt::Expression::MemberAccess(loc, box_expression, identifier) => {
-                if let pt::Expression::FunctionCall(_, box_expression, _) = *box_expression {
-                    if let pt::Expression::Type(_, ty) = *box_expression {
-                        if let pt::Type::Address = ty {
-                            //if address(0x...).balance or address(this).balance
-                            if identifier.name == "balance".to_string() {
-                                optimization_locations.insert(loc);
-                            }
+        if let pt::Expression::MemberAccess(loc, box_expression, identifier) = expression {
+            if let pt::Expression::FunctionCall(_, box_expression, _) = *box_expression {
+                if let pt::Expression::Type(_, ty) = *box_expression {
+                    if let pt::Type::Address = ty {
+                        //if address(0x...).balance or address(this).balance
+                        if identifier.name == "balance".to_string() {
+                            optimization_locations.insert(loc);
                         }
                     }
                 }
             }
-
-            _ => {}
         }
     }
 
