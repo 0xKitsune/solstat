@@ -189,13 +189,27 @@ pub fn constant_variable_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
 fn test_constant_variable_optimization() {
     let file_contents = r#"
     
-    contract Contract0 {
+    pragma solidity >= 0.8.0;
+    contract Contract {
 
+
+        uint256 firstUint256 = 0;
+        uint256 secondUint256 = 100;
+        uint256 immutable thirdUint256 = 100;
+        uint256 fourthUint256 = 100;
+        uint256 constant fifthUint256 = 1000000;
+
+       
+        function testFunction() public {
+            firstUint256 = 10;
+            secondUint256 = someVal;
+        }
     }
+ 
     "#;
 
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
     let optimization_locations = constant_variable_optimization(source_unit);
-    assert_eq!(optimization_locations.len(), 0)
+    assert_eq!(optimization_locations.len(), 2)
 }
