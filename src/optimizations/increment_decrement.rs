@@ -1,11 +1,47 @@
-use solang_parser::pt::{Expression, Loc};
+use solang_parser::pt::{self, Expression, Loc};
 use solang_parser::{self, pt::SourceUnit};
 use std::collections::HashSet;
 
 use crate::ast::ast::{self, Target};
+use crate::ast::node::Node;
 
 pub fn increment_decrement_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
+
+    //Get all increment/decrement expressions in unchecked blocks so that the analyzer does not mark these as optimization targets
+    let block_nodes = ast::extract_target_from_node(Target::Block, source_unit.clone().into());
+    let mut unchecked_locations: HashSet<Loc> = HashSet::new();
+    for node in block_nodes {
+        if let pt::Statement::Block {
+            loc: _,
+            unchecked,
+            statements,
+        } = node.statement().unwrap()
+        {
+            if unchecked {
+                for statement in statements {
+                    unchecked_locations
+                        .extend(extract_pre_increment_pre_decrement(statement.into()));
+                }
+            }
+        }
+    }
+
+    //Get all increment / decrement locations
+
+    let locations = extract_increment_decrement(source_unit.into());
+
+    for loc in locations {
+        if !unchecked_locations.contains(&loc) {
+            optimization_locations.insert(loc);
+        }
+    }
+
+    optimization_locations
+}
+
+pub fn extract_increment_decrement(node: Node) -> HashSet<Loc> {
+    let mut locations: HashSet<Loc> = HashSet::new();
 
     let target_nodes = ast::extract_targets_from_node(
         vec![
@@ -14,7 +50,7 @@ pub fn increment_decrement_optimization(source_unit: SourceUnit) -> HashSet<Loc>
             Target::PostIncrement,
             Target::PostDecrement,
         ],
-        source_unit.into(),
+        node,
     );
 
     for node in target_nodes {
@@ -23,22 +59,46 @@ pub fn increment_decrement_optimization(source_unit: SourceUnit) -> HashSet<Loc>
 
         match expression {
             Expression::PreIncrement(loc, _) => {
-                optimization_locations.insert(loc);
+                locations.insert(loc);
             }
             Expression::PreDecrement(loc, _) => {
-                optimization_locations.insert(loc);
+                locations.insert(loc);
             }
             Expression::PostIncrement(loc, _) => {
-                optimization_locations.insert(loc);
+                locations.insert(loc);
             }
             Expression::PostDecrement(loc, _) => {
-                optimization_locations.insert(loc);
+                locations.insert(loc);
             }
 
             _ => {}
         }
     }
-    optimization_locations
+    locations
+}
+
+pub fn extract_pre_increment_pre_decrement(node: Node) -> HashSet<Loc> {
+    let mut locations: HashSet<Loc> = HashSet::new();
+
+    let target_nodes =
+        ast::extract_targets_from_node(vec![Target::PreIncrement, Target::PreDecrement], node);
+
+    for node in target_nodes {
+        //We can use expect because all targets are expressions
+        let expression = node.expression().unwrap();
+
+        match expression {
+            Expression::PreIncrement(loc, _) => {
+                locations.insert(loc);
+            }
+            Expression::PreDecrement(loc, _) => {
+                locations.insert(loc);
+            }
+
+            _ => {}
+        }
+    }
+    locations
 }
 
 #[test]
