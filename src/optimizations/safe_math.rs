@@ -1,14 +1,5 @@
-use solang_parser::pt::{
-    self, CatchClause, ContractPart, Expression, Identifier, Loc, SourceUnit, SourceUnitPart,
-    Statement, Type, VariableAttribute,
-};
-use std::{
-    collections::{HashMap, HashSet},
-    process::id,
-    vec,
-};
-
-use regex::Regex;
+use solang_parser::pt::{self, Expression, Loc, SourceUnit, SourceUnitPart};
+use std::collections::HashSet;
 
 use crate::{
     ast::{
