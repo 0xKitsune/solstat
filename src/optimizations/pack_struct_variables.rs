@@ -32,8 +32,13 @@ pub fn pack_struct_variables_optimization(source_unit: SourceUnit) -> HashSet<Lo
                 }
             }
         } else if node.is_contract_part() {
-
-            //TODO:
+            if let ContractPart::StructDefinition(struct_definition) = node.contract_part().unwrap()
+            {
+                let struct_location = struct_definition.loc;
+                if struct_can_be_packed(*struct_definition) {
+                    optimization_locations.insert(struct_location);
+                }
+            }
         }
     }
     optimization_locations
@@ -72,34 +77,41 @@ fn test_pack_struct_variables_optimization() {
         uint128 res0;
         uint128 res1;
     }
-    
 
-contract OrderRouter {
-  
-    
     //should match
     struct Ex1 {
         bool isUniV2;
         address factoryAddress;
         bytes16 initBytecode;
     }
+    
+
+contract OrderRouter {
+  
+    
+    //should match
+    struct Ex2 {
+        bool isUniV2;
+        address factoryAddress;
+        bytes16 initBytecode;
+    }
 
     //should not match
-    struct Ex2 {
+    struct Ex3{
         bytes16 initBytecode;
         bool isUniV2;
         address factoryAddress;
     }
 
     //should not match
-    struct Ex3 {
+    struct Ex4 {
         bool isUniV2;
         bytes16 initBytecode;
         address factoryAddress;
     }
 
     //should match
-    struct Ex4 {
+    struct Ex5 {
         uint128 thing3;
         uint256 thing1;
         uint128 thing2;
@@ -113,5 +125,5 @@ contract OrderRouter {
 
     let optimization_locations = pack_struct_variables_optimization(source_unit);
 
-    assert_eq!(optimization_locations.len(), 2)
+    assert_eq!(optimization_locations.len(), 3)
 }
