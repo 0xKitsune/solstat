@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use solang_parser::pt::{self, Loc};
 use solang_parser::{self, pt::SourceUnit};
 
-use crate::ast::ast::{self, Target};
-use crate::utils::get_32_byte_storage_variables;
+use crate::analyzer::ast::{self, Target};
+use crate::analyzer::utils::get_32_byte_storage_variables;
 
 pub fn immutable_variables_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each optimization target identified

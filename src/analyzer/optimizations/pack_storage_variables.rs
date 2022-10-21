@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use solang_parser::pt::{self, Expression, Loc};
 use solang_parser::{self, pt::SourceUnit};
 
-use crate::ast::ast::{self, Target};
-use crate::utils;
+use crate::analyzer::ast::{self, Target};
+use crate::analyzer::utils;
 
 pub fn pack_storage_variables_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();

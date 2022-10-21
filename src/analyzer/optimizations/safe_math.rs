@@ -1,11 +1,8 @@
 use solang_parser::pt::{self, Expression, Loc, SourceUnit, SourceUnitPart};
 use std::collections::HashSet;
 
-use crate::{
-    ast::{
-        ast::{self, Target},
-        node::Node,
-    },
+use crate::analyzer::{
+    ast::{self, Node, Target},
     utils,
 };
 

@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use solang_parser::pt::{ContractPart, Expression, Loc, StructDefinition, Type};
 use solang_parser::{self, pt::SourceUnit, pt::SourceUnitPart};
 
-use crate::ast::ast::{self, Target};
-use crate::utils;
+use crate::analyzer::ast::{self, Target};
+use crate::analyzer::utils;
 
 ///Identifiy opportunities to pack structs to save gas
 pub fn pack_struct_variables_optimization(source_unit: SourceUnit) -> HashSet<Loc> {

@@ -2,8 +2,8 @@ use solang_parser::pt::{self, Expression, Loc};
 use solang_parser::{self, pt::SourceUnit};
 use std::collections::HashSet;
 
-use crate::ast::ast::{self, Target};
-use crate::ast::node::Node;
+use crate::analyzer::ast::Node;
+use crate::analyzer::ast::{self, Target};
 
 pub fn increment_decrement_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();

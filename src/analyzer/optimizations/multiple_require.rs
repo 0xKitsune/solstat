@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use solang_parser::pt::{Expression, Loc};
 use solang_parser::{self, pt::SourceUnit};
 
-use crate::ast::ast::{self, Target};
+use crate::analyzer::ast::{self, Target};
 
 pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();

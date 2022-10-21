@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use regex::Regex;
 use solang_parser::pt::{self, Loc, SourceUnit, SourceUnitPart};
 
-use crate::ast::ast::{self, extract_target_from_node, Target};
+use crate::analyzer::ast::{self, extract_target_from_node, Target};
 
 //Returns the size of the type in bytes
 pub fn get_type_size(expression: pt::Expression) -> u16 {

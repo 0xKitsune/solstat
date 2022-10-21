@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use solang_parser::pt::{self, Loc, SourceUnit};
 
-use crate::ast::ast::{self, Target};
+use crate::analyzer::ast::{self, Target};
 
 pub fn address_zero_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();

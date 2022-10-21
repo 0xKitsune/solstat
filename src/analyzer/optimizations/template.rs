@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use solang_parser::pt::Loc;
 use solang_parser::{self, pt::SourceUnit};
 
-use crate::ast::ast::{self, Target};
+use crate::analyzer::ast::{self, Target};
 
 pub fn _template_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each optimization target identified
