@@ -4,6 +4,7 @@ pub mod assign_update_array_value;
 pub mod cache_array_length;
 pub mod constant_variables;
 pub mod if_bool_equals_bool;
+pub mod immutable_variables;
 pub mod increment_decrement;
 pub mod memory_to_calldata;
 pub mod multiple_require;
