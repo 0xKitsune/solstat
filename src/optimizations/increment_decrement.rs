@@ -28,7 +28,6 @@ pub fn increment_decrement_optimization(source_unit: SourceUnit) -> HashSet<Loc>
     }
 
     //Get all increment / decrement locations
-
     let locations = extract_increment_decrement(source_unit.into());
 
     for loc in locations {
