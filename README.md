@@ -34,7 +34,7 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 - Mark storage variables as `constant` if they never change and are not marked as constants.
 
 
-#### `mmutable_variable
+#### immutable_variable
 - Mark storage variables as `immutable` if variables are assigned during deployment and never change afterwards. 
 
 #### increment_decrement
