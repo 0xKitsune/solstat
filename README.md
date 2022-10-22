@@ -12,14 +12,13 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 
 If you would like to quickly jump to any section, you can use the following links.
 
-[Installing Solstat]()
+[Installing Solstat](https://github.com/0xKitsune/solstat#installing-solstat)
 
-[Running Solstat]()
+[Running Solstat](https://github.com/0xKitsune/solstat#running-solstat)
 
-[Currently Identified Optimizations, Vulnerabilities and QA]()
+[Currently Identified Optimizations, Vulnerabilities and QA](https://github.com/0xKitsune/solstat#currently-identified-optimizations-vulnerabilities-and-qa)
 
-
-[Contributing]()
+[Contributing](https://github.com/0xKitsune/solstat#contributing)
 
 
 <hr>
@@ -47,7 +46,7 @@ cargo install --path .
 
 Now that you have Solstat invlolved, you can use the `solstat` command from anywhere in your terminal. By default, Solstat looks for a `./contracts` directory and analyzes every file within the folder. If you would like to specify the directory Solstat should use, you can pass the `--path` flag (ex. `solstat --path <path_to_dir>`). 
 
-In the default configuration, Solstat runs analysis for every [currently included Optimization, Vulnerability and QA](), however if you would like to run analysis for select patterns, you can create a `.toml` file for your custom configuration.  Check out the [default Solstat.toml configuration]() for reference. After creating a custom `.toml` file, make sure to pass the `--toml` flag when running Solstat (ex. `solstat --toml <path_to_toml_file>`).
+In the default configuration, Solstat runs analysis for every [currently included Optimization, Vulnerability and QA](https://github.com/0xKitsune/solstat#currently-identified-optimizations-vulnerabilities-and-qa), however if you would like to run analysis for select patterns, you can create a `.toml` file for your custom configuration.  Check out the [default Solstat.toml configuration](https://github.com/0xKitsune/solstat/blob/main/Solstat.toml) for reference. After creating a custom `.toml` file, make sure to pass the `--toml` flag when running Solstat (ex. `solstat --toml <path_to_toml_file>`).
 
 Once Solstat runs its analysis, a report will be generated and output as `solstat_report.md`.
 
@@ -68,7 +67,7 @@ Options:
 
 
 # Currently Identified Optimizations, Vulnerabilities and QA 
-Below are the currently identified optimizations, vulnerabilities and qa patterns that Solstat identifies. If you would like to check out a list of patterns that are ready to be implemented and you would like to add them to the repo, you can check out the [Contribution.md]()!
+Below are the currently identified optimizations, vulnerabilities and qa patterns that Solstat identifies. If you would like to check out a list of patterns that are ready to be implemented and you would like to add them to the repo, you can check out the [Contribution.md](https://github.com/0xKitsune/solstat/blob/main/Contributing.md#potential-optimizations-vulnerability-and-qa-additions)!
 
 <br>
 
@@ -153,4 +152,4 @@ Below are the currently identified optimizations, vulnerabilities and qa pattern
 <br>
 
 # Contributing
-Contributions are welcome and encouraged! If you are interested in contributing, please check out the [Contributing.md]() file.
+Contributions are welcome and encouraged! If you are interested in contributing, please check out the [Contributing.md](https://github.com/0xKitsune/solstat/blob/main/Contributing.md) file.

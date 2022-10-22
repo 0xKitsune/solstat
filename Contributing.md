@@ -17,7 +17,7 @@ The repository can seem a little dense in some parts but adding a new optimizati
 ### Adding the Optimization
 All optimizations are located in `src/analyzer/optimizations`. Here you will see a new file for each of the optimizations that Solstat looks for. To add a new optimization, start by adding a new file in this directory  (ex. `pack_struct_variables.rs` would be the file name for the optimization that analyzes for struct packing).
 
-Now that you have a new file for your optimization, copy and paste the code from [`src/analyzer/optimizations/template.rs`]() into your file. 
+Now that you have a new file for your optimization, copy and paste the code from [`src/analyzer/optimizations/template.rs`](https://github.com/0xKitsune/solstat/blob/main/src/analyzer/optimizations/template.rs) into your file. 
 
 Lets take a look at a barebones version of the template without any comments.
 
@@ -53,9 +53,9 @@ This might sound a little complicated but its way easier than it sounds. Once we
 Once all of the target nodes are extracted, you can traverse the node for specfic patterns that indicate a match in the pattern you are looking for.
 
 For some easy to read examples, checkout:
-- [`src/analyzer/optimizations/address_zero.rs`]()
-- [`src/analyzer/optimizations/multiple_require.rs`]()
-- [`src/analyzer/optimizations/solidity_keccak256.rs`]()
+- [`src/analyzer/optimizations/address_balance.rs`](https://github.com/0xKitsune/solstat/blob/main/src/analyzer/optimizations/address_balance.rs)
+- [`src/analyzer/optimizations/multiple_require.rs`](https://github.com/0xKitsune/solstat/blob/main/src/analyzer/optimizations/multiple_require.rs)
+- [`src/analyzer/optimizations/solidity_keccak256.rs`](https://github.com/0xKitsune/solstat/blob/main/src/analyzer/optimizations/solidity_keccak256.rs)
 
 ### Writing a test
 Now that you have the optimization logic, make sure to write a test suite at the bottom of the file. The template has all the necessary building blocks you need so that you only need to supply the Solidity code, and how many findings the optimization should identify.
@@ -163,7 +163,7 @@ Congrats, you have updated the codebase to implement your optimization!
 
 
 ### Report Section
-The final step in the contribution process is to write a report section that describes your optimization. All reports for optimizations are added to `src/report/report_sections/optimizations`. For a template report you can check out [`src/report/report_sections/optimizations/template.md`](). 
+The final step in the contribution process is to write a report section that describes your optimization. All reports for optimizations are added to `src/report/report_sections/optimizations`. For a template report you can check out [`src/report/report_sections/optimizations/template.md`](https://github.com/0xKitsune/solstat/blob/main/src/report/report_sections/optimizations/template.md). To generate a quick gas report, feel free to use [0xKitsune/gas-lab](https://github.com/0xKitsune/gas-lab) or set up a environment within Foundry to test your gas comparison. 
 
 Once you have written your report section, the final step before PRing the contribution is to link your report to your optimization by adding pattern matching for your optimization to `get_optimization_report_section()`
 
