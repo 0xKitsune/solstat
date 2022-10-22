@@ -45,6 +45,9 @@ cargo install --path .
 # Running Solstat
 
 
+<hr>
+<br>
+
 
 # Currently Identified Optimizations, Vulnerabilities and QA 
 Below are the currently identified optimizations, vulnerabilities and qa patterns that Solstat identifies. If you would like to check out a list of patterns that are ready to be implemented and you would like to add them to the repo, you can check out the [Contribution.md]()!

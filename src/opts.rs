@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process};
 
 use crate::analyzer::{optimizations, vulnerabilities};
 use crate::analyzer::{
@@ -86,6 +86,19 @@ impl Opts {
         let path = if args.path.is_some() {
             args.path.unwrap()
         } else {
+            match fs::read_dir("./contractsx") {
+                Ok(_) => {}
+
+                Err(_) => {
+                    yellow!(
+                        "Error when reading the target contracts directory. 
+If the `--path` flag is not passed, Solstat will look for `./contracts` by default.
+To fix this, either add the `./contracts` directory or provide `--path <path_to_contracts_dir>\n"
+                    );
+                    process::exit(1)
+                }
+            }
+
             String::from("./contracts")
         };
 

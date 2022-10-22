@@ -12,3 +12,4 @@ indicatif = "0.16.2"
 regex = "1.6.0"
 toml = "0.5.9"
 serde = {version= "1.0.147",  features = ["derive"]}
+colour = "0.6.0"

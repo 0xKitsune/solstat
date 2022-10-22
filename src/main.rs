@@ -6,6 +6,9 @@ use analyzer::*;
 use opts::Opts;
 use report::generation::generate_report;
 
+#[macro_use]
+extern crate colour;
+
 fn main() {
     let opts = Opts::new();
 
