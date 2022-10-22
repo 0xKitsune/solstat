@@ -12,6 +12,8 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 
 If you would like to quickly jump to any section, you can use the following links.
 
+[Installing Solstat]()
+
 [Running Solstat]()
 
 [Currently Identified Optimizations, Vulnerabilities and QA]()
@@ -21,6 +23,31 @@ If you would like to quickly jump to any section, you can use the following link
 
 <hr>
 <br>
+
+# Installing Solstat
+
+### Install from crates.io
+To install from crates.io, first make sure that you have [Rust installed](https://www.rust-lang.org/tools/install). 
+
+Then you can simply run the following command in your terminal.
+
+```
+cargo install solstat
+```
+
+### Install from source
+To install from source, first make sure that you have [Rust installed](https://www.rust-lang.org/tools/install). Then you can run the following command in your terminal.
+
+```
+git clone https://github.com/0xKitsune/solstat &&
+cd solstat &&
+cargo install --path .
+```
+
+<hr>
+<br>
+
+# Running Solstat
 
 
 
