@@ -4,7 +4,6 @@ use solang_parser::pt::{self, Loc, SourceUnit, SourceUnitPart};
 use std::collections::HashMap;
 
 pub type LineNumber = i32;
-pub type Filename = String;
 
 //Returns the size of the type in bytes
 pub fn get_type_size(expression: pt::Expression) -> u16 {
@@ -22,6 +21,24 @@ pub fn get_type_size(expression: pt::Expression) -> u16 {
 
     //TODO: add error handling that bubbles up if the expression passed in is not a type
     256
+}
+
+//get line number of start of character range
+pub fn get_line_number(char_number: usize, file_contents: &str) -> i32 {
+    let re = Regex::new(r"\n").unwrap();
+    let mut i = 1;
+    for capture in re.captures_iter(file_contents).into_iter() {
+        for c in capture.iter() {
+            if c.unwrap().start() > char_number {
+                //+1 since line numbers start at 1
+                return i;
+            } else {
+                i = i + 1;
+            }
+        }
+    }
+
+    return 0;
 }
 
 pub fn storage_slots_used(variables: Vec<u16>) -> u32 {

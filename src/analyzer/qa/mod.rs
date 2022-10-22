@@ -39,12 +39,9 @@ pub fn analyze_dir(
 
         let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //Parse the file into a the ast
-        let source_unit = solang_parser::parse(&file_contents, i).unwrap().0;
-
         //For each active optimization
         for target in &qa {
-            let line_numbers = analyze_for_qa(source_unit.clone(), *target);
+            let line_numbers = analyze_for_qa(&file_contents, i, *target);
 
             if line_numbers.len() > 0 {
                 let file_optimizations = vulnerability_locations
@@ -59,8 +56,15 @@ pub fn analyze_dir(
     vulnerability_locations
 }
 
-pub fn analyze_for_qa(source_unit: SourceUnit, qa: QualityAssurance) -> Vec<LineNumber> {
+pub fn analyze_for_qa(
+    file_contents: &str,
+    file_number: usize,
+    qa: QualityAssurance,
+) -> Vec<LineNumber> {
     let line_numbers = vec![];
+
+    //Parse the file into a the ast
+    let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
 
     line_numbers
 }

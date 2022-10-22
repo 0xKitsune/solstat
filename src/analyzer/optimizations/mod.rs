@@ -101,12 +101,9 @@ pub fn analyze_dir(
 
         let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //Parse the file into a the ast
-        let source_unit = solang_parser::parse(&file_contents, i).unwrap().0;
-
         //For each active optimization
         for optimization in &optimizations {
-            let line_numbers = analyze_for_optimization(source_unit.clone(), *optimization);
+            let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
 
             if line_numbers.len() > 0 {
                 let file_optimizations = optimization_locations
@@ -122,10 +119,14 @@ pub fn analyze_dir(
 }
 
 pub fn analyze_for_optimization(
-    source_unit: SourceUnit,
+    file_contents: &str,
+    file_number: usize,
     optimization: Optimization,
 ) -> Vec<LineNumber> {
     let line_numbers = vec![];
+
+    //Parse the file into a the ast
+    let source_unit = solang_parser::parse(file_contents, file_number).unwrap().0;
 
     line_numbers
 }
