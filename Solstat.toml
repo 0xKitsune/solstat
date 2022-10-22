@@ -1,0 +1,17 @@
+# Directory that contain contracts to be analyzed
+path = './contracts'
+
+# Optimizations that each contract will be analyzed for
+optimizations = ["address_balance", "address_zero", "assign_update_array_value", "cache_array_length", "constant_variables", 
+"bool_equals_bool", "immutable_variables", "increment_decrement", "memory_to_calldata", "multiple_require", "pack_storage_variables", 
+"payable_function", "safe_math_pre_080", "safe_math_post_080", "shift_math", "solidity_keccak256", "solidity_math", 
+"sstore", "string_errors"]
+
+# Vulnerabilities that each contract will be analyzed for
+vulnerabilities = []
+
+# QA that each contract will be analyzed for
+qa = []
+
+
+
