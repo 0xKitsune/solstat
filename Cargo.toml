@@ -2,6 +2,12 @@
 name = "solstat"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A Solidity static analyzer to identify contract vulnerabilities and gas efficiencies."
+readme = "README.md"
+homepage = "https://github.com/0xKitsune/solstat"
+repository = "https://github.com/0xKitsune/solstat"
+keywords = ["solidity", "static analysis", "gas", "security", "audit"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
