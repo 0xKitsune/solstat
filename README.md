@@ -44,6 +44,21 @@ cargo install --path .
 
 # Running Solstat
 
+Now that you have Solstat invlolved, you can use the `solstat` command from anywhere in your terminal.
+
+```
+Usage: solstat [OPTIONS]
+
+Options:
+  -p, --path <PATH>  Path to the directory containing the files Solstat will analyze. The default directory is `./contracts`
+  -t, --toml <TOML>  Path to the toml file containing the Solstat configuration when not using the default settings.
+  -h, --help         Print help information
+```
+
+[Default Solstat.toml configuration]().
+
+
+
 
 <hr>
 <br>

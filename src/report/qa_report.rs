@@ -30,6 +30,8 @@ pub fn generate_qa_report(qa_items: HashMap<QualityAssurance, Vec<(String, Vec<i
                 }
             }
 
+            matches_section.push_str("\n\n");
+
             let completed_report_section = report_section + "\n" + matches_section.as_str();
             qa_report.push_str(completed_report_section.as_str());
         }

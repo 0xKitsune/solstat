@@ -86,7 +86,7 @@ impl Opts {
         let path = if args.path.is_some() {
             args.path.unwrap()
         } else {
-            match fs::read_dir("./contractsx") {
+            match fs::read_dir("./contracts") {
                 Ok(_) => {}
 
                 Err(_) => {

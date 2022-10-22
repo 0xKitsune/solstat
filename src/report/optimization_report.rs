@@ -37,6 +37,8 @@ pub fn generate_optimization_report(
                 }
             }
 
+            matches_section.push_str("\n\n");
+
             let completed_report_section = report_section + "\n" + matches_section.as_str();
             optimization_report.push_str(completed_report_section.as_str());
         }
