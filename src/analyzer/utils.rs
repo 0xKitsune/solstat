@@ -1,9 +1,10 @@
-use std::collections::HashMap;
-
+use crate::analyzer::ast::{self, extract_target_from_node, Target};
 use regex::Regex;
 use solang_parser::pt::{self, Loc, SourceUnit, SourceUnitPart};
+use std::collections::HashMap;
 
-use crate::analyzer::ast::{self, extract_target_from_node, Target};
+pub type LineNumber = i32;
+pub type Filename = String;
 
 //Returns the size of the type in bytes
 pub fn get_type_size(expression: pt::Expression) -> u16 {
