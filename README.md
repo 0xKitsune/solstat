@@ -10,7 +10,24 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 `------' `------' `------' `------' `------' `------' `------'
 ```
 
+If you would like to quickly jump to any section, you can use the following links.
 
+[Running Solstat]()
+
+[Currently Identified Optimizations, Vulnerabilities and QA]()
+
+[Contributing]()
+
+
+<hr>
+<br>
+
+
+
+# Currently Identified Optimizations, Vulnerabilities and QA 
+Below are the currently identified optimizations, vulnerabilities and qa patterns that Solstat identifies. If you would like to check out a list of patterns that are ready to be implemented and you would like to add them to the repo, you can check out the [Contribution.md]()!
+
+<br>
 
 
 ## Gas Optimizations
@@ -78,9 +95,8 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 - Use custom errors instead of string error messages for contracts using Solidity version >= 0.8.4.
 
 
-
-
-
+<hr>
+<br>
 
 ## Vulnerabilities
 
