@@ -142,5 +142,14 @@ Below are the currently identified optimizations, vulnerabilities and qa pattern
 
 ## Vulnerabilities
 
+<hr>
+<br>
 
 ## QA
+
+
+<hr>
+<br>
+
+# Contributing
+Contributions are welcome and encouraged! If you are interested in contributing, please check out the [Contributing.md]() file.
