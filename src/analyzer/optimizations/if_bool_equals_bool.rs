@@ -5,7 +5,7 @@ use solang_parser::{self, pt::SourceUnit};
 
 use crate::analyzer::ast::{self, Target};
 
-pub fn bool_equals_bool_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
+pub fn if_bool_equals_bool_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each optimization target identified
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
 
@@ -120,7 +120,7 @@ fn test_analyze_for_if_bool_equals_bool_optimization() {
 
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
-    let optimization_locations = bool_equals_bool_optimization(source_unit);
+    let optimization_locations = if_bool_equals_bool_optimization(source_unit);
 
     assert_eq!(optimization_locations.len(), 8)
 }

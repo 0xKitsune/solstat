@@ -2,7 +2,29 @@ use std::{collections::HashMap, fs, vec};
 
 use solang_parser::pt::{self, SourceUnit};
 
-use super::utils::LineNumber;
+use self::{
+    address_balance::address_balance_optimization,
+    address_zero::address_zero_optimization,
+    assign_update_array_value::assign_update_array_optimization,
+    cache_array_length::cache_array_length_optimization,
+    constant_variables::constant_variable_optimization,
+    if_bool_equals_bool::if_bool_equals_bool_optimization,
+    immutable_variables::immutable_variables_optimization,
+    increment_decrement::increment_decrement_optimization,
+    memory_to_calldata::memory_to_calldata_optimization,
+    multiple_require::multiple_require_optimization,
+    pack_storage_variables::pack_storage_variables_optimization,
+    pack_struct_variables::pack_struct_variables_optimization,
+    payable_function::payable_function_optimization,
+    safe_math::{safe_math_post_080_optimization, safe_math_pre_080_optimization},
+    shift_math::shift_math_optimization,
+    solidity_keccak256::solidity_keccak256_optimization,
+    solidity_math::solidity_math_optimization,
+    sstore::sstore_optimization,
+    string_errors::string_error_optimization,
+};
+
+use super::utils::{self, LineNumber};
 
 pub mod address_balance;
 pub mod address_zero;
@@ -123,10 +145,37 @@ pub fn analyze_for_optimization(
     file_number: usize,
     optimization: Optimization,
 ) -> Vec<LineNumber> {
-    let line_numbers = vec![];
+    let mut line_numbers = vec![];
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(file_contents, file_number).unwrap().0;
+
+    let locations = match optimization {
+        Optimization::AddressBalance => address_balance_optimization(source_unit),
+        Optimization::AddressZero => address_zero_optimization(source_unit),
+        Optimization::AssignUpdateArrayValue => assign_update_array_optimization(source_unit),
+        Optimization::CacheArrayLength => cache_array_length_optimization(source_unit),
+        Optimization::ConstantVariables => constant_variable_optimization(source_unit),
+        Optimization::IfBoolEqualsBool => if_bool_equals_bool_optimization(source_unit),
+        Optimization::ImmutableVarialbes => immutable_variables_optimization(source_unit),
+        Optimization::IncrementDecrement => increment_decrement_optimization(source_unit),
+        Optimization::MemoryToCalldata => memory_to_calldata_optimization(source_unit),
+        Optimization::MultipleRequire => multiple_require_optimization(source_unit),
+        Optimization::PackStorageVariables => pack_storage_variables_optimization(source_unit),
+        Optimization::PackStructVariables => pack_struct_variables_optimization(source_unit),
+        Optimization::PayableFunction => payable_function_optimization(source_unit),
+        Optimization::SafeMathPre080 => safe_math_pre_080_optimization(source_unit),
+        Optimization::SafeMathPost080 => safe_math_post_080_optimization(source_unit),
+        Optimization::ShiftMath => shift_math_optimization(source_unit),
+        Optimization::SolidityKeccak256 => solidity_keccak256_optimization(source_unit),
+        Optimization::SolidityMath => solidity_math_optimization(source_unit),
+        Optimization::Sstore => sstore_optimization(source_unit),
+        Optimization::StringErrors => string_error_optimization(source_unit),
+    };
+
+    for loc in locations {
+        line_numbers.push(utils::get_line_number(loc.start(), file_contents));
+    }
 
     line_numbers
 }
