@@ -195,11 +195,35 @@ pub fn get_optimization_report_section(
 
 And that wraps up everything. You can now PR to `developement` and wait for the merge!
 
-<br>
-
-## Vulnerabilities
-
 
 <br>
 
 ## QA
+Contributing to QA is exactly the same as Optimizations, with the only difference being that any directory path containing `optimizations`, should now contain `qa` instead (ex. `src/analyzer/optimizations/mod.rs` => `src/analyzer/qa/mod.rs`). Everything else is exactly the same as adding an optimization.
+
+<br>
+
+## Vulnerabilities
+
+Contributing to Vulnerabilities is exactly the same as Optimizations, with the two minor differences. The first being any directory path containing `optimizations`, should now contain `vulnerabilities` instead (ex. `src/analyzer/optimizations/mod.rs` => `src/analyzer/vulnerabilities/mod.rs`). 
+
+The second difference is that within `get_vulnerability_report_section()` instead of just returning the file name of the report section, it should also return a `VulnerabilitySeverity`.
+
+```rust
+pub enum VulnerabilitySeverity {
+    High,
+    Medium,
+    Low,
+}
+
+pub fn get_vulnerability_report_section(
+    vulnerability: Vulnerability,
+    vulnerability_report_sections_path: String,
+) -> (String, VulnerabilitySeverity) {
+   
+}
+```
+
+<br>
+
+
