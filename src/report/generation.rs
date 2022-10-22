@@ -30,8 +30,6 @@ pub fn generate_optimization_report(
             .expect("Unable to read file");
     optimization_report.push_str((overview_section + "\n").as_str());
 
-    let mut total_optimizations = 0;
-
     for optimization in optimizations {
         if optimization.1.len() > 0 {
             let optimization_target = optimization.0;
@@ -49,8 +47,6 @@ pub fn generate_optimization_report(
                     matches_section
                         .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
                     matches_section.push_str("\n");
-
-                    total_optimizations += 1;
                 }
             }
 
