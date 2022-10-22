@@ -2,15 +2,9 @@ mod analyzer;
 mod opts;
 mod report;
 
-use std::path;
-
-use clap::Parser;
-use opts::Opts;
-
-use crate::opts::Args;
-use report::generation::generate_report;
-
 use analyzer::*;
+use opts::Opts;
+use report::generation::generate_report;
 
 fn main() {
     let opts = Opts::new();

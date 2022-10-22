@@ -1,3 +1,5 @@
+use std::fs;
+
 use crate::analyzer::{optimizations, vulnerabilities};
 use crate::analyzer::{
     optimizations::Optimization,
@@ -35,11 +37,27 @@ pub struct Opts {
     pub qa: Vec<QualityAssurance>,
 }
 
+#[derive(serde::Deserialize)]
+pub struct SolstatToml {
+    pub path: String,
+    pub optimizations: Vec<String>,
+    pub vulnerabilities: Vec<String>,
+    pub qa: Vec<String>,
+}
+
 impl Opts {
     pub fn new() -> Opts {
         let args = Args::parse();
 
         let (optimizations, vulnerabilities, qa) = if args.toml.is_some() {
+            let toml_path = args.toml.unwrap();
+
+            let toml_str =
+                fs::read_to_string(toml_path).expect("Could not read toml file to string");
+
+            let solstat_toml: SolstatToml =
+                toml::from_str(&toml_str).expect("Could not convert toml contents to SolstatToml");
+
             (vec![], vec![], vec![])
         } else {
             (
