@@ -5,6 +5,7 @@ use solang_parser::{self, pt::SourceUnit};
 
 use crate::analyzer::ast::{self, Target};
 
+//Use selfbalance() instead of address(this).balance()
 pub fn address_balance_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
 

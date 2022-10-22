@@ -5,6 +5,7 @@ use solang_parser::{self, pt::SourceUnit};
 
 use crate::analyzer::ast::{self, Target};
 
+//Use assembly to hash instead of keccak256
 pub fn solidity_keccak256_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each optimization target identified
     let mut optimization_locations: HashSet<Loc> = HashSet::new();

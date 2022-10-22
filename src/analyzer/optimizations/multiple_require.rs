@@ -5,6 +5,7 @@ use solang_parser::{self, pt::SourceUnit};
 
 use crate::analyzer::ast::{self, Target};
 
+//Use multiple require statements instead of one single require statement with multiple conditions
 pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     let mut optimization_locations: HashSet<Loc> = HashSet::new();
 

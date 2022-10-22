@@ -1,3 +1,5 @@
+pub mod template;
+
 use std::{collections::HashMap, fs};
 
 use solang_parser::pt::SourceUnit;
