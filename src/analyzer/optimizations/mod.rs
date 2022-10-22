@@ -6,9 +6,9 @@ use self::{
     address_balance::address_balance_optimization,
     address_zero::address_zero_optimization,
     assign_update_array_value::assign_update_array_optimization,
+    bool_equals_bool::bool_equals_bool_optimization,
     cache_array_length::cache_array_length_optimization,
     constant_variables::constant_variable_optimization,
-    if_bool_equals_bool::if_bool_equals_bool_optimization,
     immutable_variables::immutable_variables_optimization,
     increment_decrement::increment_decrement_optimization,
     memory_to_calldata::memory_to_calldata_optimization,
@@ -29,9 +29,9 @@ use super::utils::{self, LineNumber};
 pub mod address_balance;
 pub mod address_zero;
 pub mod assign_update_array_value;
+pub mod bool_equals_bool;
 pub mod cache_array_length;
 pub mod constant_variables;
-pub mod if_bool_equals_bool;
 pub mod immutable_variables;
 pub mod increment_decrement;
 pub mod memory_to_calldata;
@@ -54,7 +54,7 @@ pub enum Optimization {
     AssignUpdateArrayValue,
     CacheArrayLength,
     ConstantVariables,
-    IfBoolEqualsBool,
+    BoolEqualsBool,
     ImmutableVarialbes,
     IncrementDecrement,
     MemoryToCalldata,
@@ -78,7 +78,7 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::AssignUpdateArrayValue,
         Optimization::CacheArrayLength,
         Optimization::ConstantVariables,
-        Optimization::IfBoolEqualsBool,
+        Optimization::BoolEqualsBool,
         Optimization::ImmutableVarialbes,
         Optimization::IncrementDecrement,
         Optimization::MemoryToCalldata,
@@ -156,7 +156,7 @@ pub fn analyze_for_optimization(
         Optimization::AssignUpdateArrayValue => assign_update_array_optimization(source_unit),
         Optimization::CacheArrayLength => cache_array_length_optimization(source_unit),
         Optimization::ConstantVariables => constant_variable_optimization(source_unit),
-        Optimization::IfBoolEqualsBool => if_bool_equals_bool_optimization(source_unit),
+        Optimization::BoolEqualsBool => bool_equals_bool_optimization(source_unit),
         Optimization::ImmutableVarialbes => immutable_variables_optimization(source_unit),
         Optimization::IncrementDecrement => increment_decrement_optimization(source_unit),
         Optimization::MemoryToCalldata => memory_to_calldata_optimization(source_unit),

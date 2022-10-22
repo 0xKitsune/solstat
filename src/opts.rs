@@ -26,18 +26,10 @@ pub struct Args {
         help = "Path to the toml file containing the Solstat configuration when not using the default settings."
     )]
     pub toml: Option<String>,
-
-    #[clap(
-        short,
-        long,
-        help = "Path of the directory where Solstat reports will be written to."
-    )]
-    pub out: Option<String>,
 }
 
 pub struct Opts {
     pub path: String,
-    pub out: String,
     pub optimizations: Vec<Optimization>,
     pub vulnerabilities: Vec<Vulnerability>,
     pub qa: Vec<QualityAssurance>,
@@ -63,15 +55,8 @@ impl Opts {
             String::from("./contracts")
         };
 
-        let out = if args.out.is_some() {
-            args.out.unwrap()
-        } else {
-            String::from("solstat_reports")
-        };
-
         Opts {
             path,
-            out,
             optimizations,
             vulnerabilities,
             qa,
