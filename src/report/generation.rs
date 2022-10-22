@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, env, fs};
 
 use crate::analyzer::{
     optimizations::Optimization, qa::QualityAssurance, vulnerabilities::Vulnerability,
@@ -22,12 +22,13 @@ pub fn generate_optimization_report(
     let mut optimization_report = String::from("");
 
     let optimization_report_sections_path: String =
-        "src/report/report_sections/optimizations".to_owned();
+        "./src/report/report_sections/optimizations/".to_owned();
 
     //Add optimization report overview
     let overview_section =
         fs::read_to_string(optimization_report_sections_path.clone() + "overview.md")
-            .expect("Unable to read file");
+            .expect("Unable to read overview.md");
+
     optimization_report.push_str((overview_section + "\n").as_str());
 
     for optimization in optimizations {
@@ -77,6 +78,12 @@ pub fn get_optimization_report_section(
             fs::read_to_string(optimization_report_sections_path + "assign_update_array_value.md")
                 .expect("Unable to read file")
         }
+
+        Optimization::BoolEqualsBool => {
+            fs::read_to_string(optimization_report_sections_path + "bool_equals_bool.md")
+                .expect("Unable to read file")
+        }
+
         Optimization::CacheArrayLength => {
             fs::read_to_string(optimization_report_sections_path + "cache_array_length.md")
                 .expect("Unable to read file")
@@ -85,10 +92,7 @@ pub fn get_optimization_report_section(
             fs::read_to_string(optimization_report_sections_path + "constant_variable.md")
                 .expect("Unable to read file")
         }
-        Optimization::BoolEqualsBool => {
-            fs::read_to_string(optimization_report_sections_path + "bool_equals_bool.md")
-                .expect("Unable to read file")
-        }
+
         Optimization::ImmutableVarialbes => {
             fs::read_to_string(optimization_report_sections_path + "immutable_variable.md")
                 .expect("Unable to read file")
