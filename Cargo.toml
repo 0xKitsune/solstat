@@ -7,7 +7,7 @@ description = "A Solidity static analyzer to identify contract vulnerabilities a
 readme = "README.md"
 homepage = "https://github.com/0xKitsune/solstat"
 repository = "https://github.com/0xKitsune/solstat"
-keywords = ["solidity", "static analysis", "gas", "security", "audit"]
+keywords = ["solidity", "static_analysis", "gas", "security", "audit"]
 exclude = [
     "target/*",
     "example_report.md",
