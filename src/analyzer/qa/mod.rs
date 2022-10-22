@@ -27,12 +27,12 @@ pub fn analyze_dir(
     {
         //Get the file path, name and contents
         let file_path = path
-            .expect(format!("Could not file unwrap path").as_str())
+            .expect(format!("Could not unwrap file path: {}", i).as_str())
             .path();
 
         let file_name = file_path
             .file_name()
-            .expect("Could not unwrap file name to OsStr")
+            .expect(format!("Could not unwrap file name to OsStr: {}", i).as_str())
             .to_str()
             .expect("Could not convert file name from OsStr to &str")
             .to_string();
