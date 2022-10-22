@@ -1,0 +1,26 @@
+[package]
+name = "solstat"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A Solidity static analyzer to identify contract vulnerabilities and gas efficiencies."
+readme = "README.md"
+homepage = "https://github.com/0xKitsune/solstat"
+repository = "https://github.com/0xKitsune/solstat"
+keywords = ["solidity", "static analysis", "gas", "security", "audit"]
+exclude = [
+    "target/*",
+    "example_report.md",
+    ".github/*",
+    ".gitignore"
+]
+
+
+[dependencies]
+clap = {version= "4.0.15", features = ["derive"]}
+solang-parser = "0.1.13"
+indicatif = "0.16.2"
+regex = "1.6.0"
+toml = "0.5.9"
+serde = {version= "1.0.147",  features = ["derive"]}
+colour = "0.6.0"
