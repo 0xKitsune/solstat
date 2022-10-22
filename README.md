@@ -25,19 +25,14 @@ If you would like to quickly jump to any section, you can use the following link
 <br>
 
 # Installing Solstat
+First make sure that you have [Rust installed](https://www.rust-lang.org/tools/install), then you can choose either of the following installation methods by entering either command in your terminal below.
 
 ### Install from crates.io
-To install from crates.io, first make sure that you have [Rust installed](https://www.rust-lang.org/tools/install). 
-
-Then you can simply run the following command in your terminal.
-
 ```
 cargo install solstat
 ```
 
 ### Install from source
-To install from source, first make sure that you have [Rust installed](https://www.rust-lang.org/tools/install). Then you can run the following command in your terminal.
-
 ```
 git clone https://github.com/0xKitsune/solstat &&
 cd solstat &&
