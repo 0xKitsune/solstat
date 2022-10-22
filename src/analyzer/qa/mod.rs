@@ -11,6 +11,14 @@ pub fn get_all_qa() -> Vec<QualityAssurance> {
     vec![]
 }
 
+pub fn str_to_qa(qa: &str) -> QualityAssurance {
+    match qa.to_lowercase().as_str() {
+        other => {
+            panic!("Unrecgonized qa: {}", other)
+        }
+    }
+}
+
 pub fn analyze_dir(
     target_dir: &str,
     qa: Vec<QualityAssurance>,

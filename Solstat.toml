@@ -1,10 +1,9 @@
-[profile.default]
-# Directory / Directories that contain contracts to be analyzed
-path = "./contracts"
+# Directory that contain contracts to be analyzed
+path = './contracts'
 # Optimizations that each contract will be analyzed for
-optimizations = ['lib']
+optimizations = []
 # Vulnerabilities that each contract will be analyzed for
-vulnerabilities = ['']
-# Vulnerabilities that each contract will be analyzed for
-qa = ['']
+vulnerabilities = []
+# QA that each contract will be analyzed for
+qa = []
 

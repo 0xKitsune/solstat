@@ -2,9 +2,9 @@ use std::fs;
 
 use crate::analyzer::{optimizations, vulnerabilities};
 use crate::analyzer::{
-    optimizations::Optimization,
-    qa::{self, QualityAssurance},
-    vulnerabilities::Vulnerability,
+    optimizations::{str_to_optimization, Optimization},
+    qa::{self, str_to_qa, QualityAssurance},
+    vulnerabilities::{str_to_vulnerability, Vulnerability},
 };
 use clap::Parser;
 
@@ -37,7 +37,7 @@ pub struct Opts {
     pub qa: Vec<QualityAssurance>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct SolstatToml {
     pub path: String,
     pub optimizations: Vec<String>,
@@ -58,7 +58,23 @@ impl Opts {
             let solstat_toml: SolstatToml =
                 toml::from_str(&toml_str).expect("Could not convert toml contents to SolstatToml");
 
-            (vec![], vec![], vec![])
+            (
+                solstat_toml
+                    .optimizations
+                    .iter()
+                    .map(|f| str_to_optimization(f))
+                    .collect::<Vec<Optimization>>(),
+                solstat_toml
+                    .vulnerabilities
+                    .iter()
+                    .map(|f| str_to_vulnerability(f))
+                    .collect::<Vec<Vulnerability>>(),
+                solstat_toml
+                    .vulnerabilities
+                    .iter()
+                    .map(|f| str_to_qa(f))
+                    .collect::<Vec<QualityAssurance>>(),
+            )
         } else {
             (
                 optimizations::get_all_optimizations(),

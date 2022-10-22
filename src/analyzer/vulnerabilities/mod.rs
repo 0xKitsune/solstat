@@ -12,6 +12,14 @@ pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
     vec![]
 }
 
+pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
+    match vuln.to_lowercase().as_str() {
+        other => {
+            panic!("Unrecgonized vulnerability: {}", other)
+        }
+    }
+}
+
 pub fn analyze_dir(
     target_dir: &str,
     vulnerabilities: Vec<Vulnerability>,

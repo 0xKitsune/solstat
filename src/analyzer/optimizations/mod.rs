@@ -1,7 +1,5 @@
 use std::{collections::HashMap, fs, vec};
 
-use solang_parser::pt::{self, SourceUnit};
-
 use self::{
     address_balance::address_balance_optimization,
     address_zero::address_zero_optimization,
@@ -94,6 +92,34 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::Sstore,
         Optimization::StringErrors,
     ]
+}
+
+pub fn str_to_optimization(opt: &str) -> Optimization {
+    match opt.to_lowercase().as_str() {
+        "address_balance" => Optimization::AddressBalance,
+        "address_zero" => Optimization::AddressZero,
+        "assign_update_array_value" => Optimization::AssignUpdateArrayValue,
+        "cache_array_length" => Optimization::CacheArrayLength,
+        "constant_variables" => Optimization::ConstantVariables,
+        "bool_equals_bool" => Optimization::BoolEqualsBool,
+        "immutable_variables" => Optimization::ImmutableVarialbes,
+        "increment_decrement" => Optimization::IncrementDecrement,
+        "memory_to_calldata" => Optimization::MemoryToCalldata,
+        "multiple_require" => Optimization::MultipleRequire,
+        "pack_storage_variables" => Optimization::PackStorageVariables,
+        "payable_function" => Optimization::PayableFunction,
+        "safe_math_pre_080" => Optimization::SafeMathPre080,
+        "safe_math_post_080" => Optimization::SafeMathPost080,
+        "shift_math" => Optimization::ShiftMath,
+        "solidity_keccak256" => Optimization::SolidityKeccak256,
+        "solidity_math" => Optimization::SolidityMath,
+        "sstore" => Optimization::Sstore,
+        "string_errors" => Optimization::StringErrors,
+
+        other => {
+            panic!("Unrecgonized optimization: {}", other)
+        }
+    }
 }
 
 pub fn analyze_dir(
