@@ -93,7 +93,7 @@ impl Opts {
                     yellow!(
                         "Error when reading the target contracts directory. 
 If the `--path` flag is not passed, Solstat will look for `./contracts` by default.
-To fix this, either add the `./contracts` directory or provide `--path <path_to_contracts_dir>\n"
+To fix this, either add a `./contracts` directory or provide `--path <path_to_contracts_dir>\n"
                     );
                     process::exit(1)
                 }
