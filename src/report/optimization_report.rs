@@ -52,6 +52,7 @@ pub fn generate_optimization_report(
     completed_optimization_report
 }
 
+<<<<<<< HEAD
 pub fn get_optimization_report_section(optimization: Optimization) -> String {
     match optimization {
         Optimization::AddressBalance => address_balance::report_section_content(),
