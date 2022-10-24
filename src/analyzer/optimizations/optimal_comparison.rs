@@ -5,7 +5,7 @@ use solang_parser::{self, pt::SourceUnit};
 
 use crate::analyzer::ast::{self, Target};
 
-pub fn _template_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
+pub fn optimal_comparison_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each optimization target identified
     let optimization_locations: HashSet<Loc> = HashSet::new();
 
@@ -33,16 +33,22 @@ pub fn _template_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
 }
 
 #[test]
-fn test_template_optimization() {
+fn test_optimal_comparison_optimization() {
     let file_contents = r#"
     
-    contract Contract0 {
-
+contract Contract0 {
+    function greaterThanOrEqualTo(uint256 a, uint256 b) {
+        return a >= b;
     }
+
+    function lessThanOrEqualTo(uint256 a, uint256 b) {
+        return a <= b;
+    }
+}
     "#;
 
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
-    let optimization_locations = _template_optimization(source_unit);
-    assert_eq!(optimization_locations.len(), 0)
+    let optimization_locations = optimal_comparison_optimization(source_unit);
+    assert_eq!(optimization_locations.len(), 2)
 }
