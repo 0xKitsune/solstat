@@ -28,6 +28,7 @@ pub fn multiple_require_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
                         if let Expression::And(_, _, _) = func_call_expression {
                             //add the location to the list of optimization locations
                             optimization_locations.insert(loc);
+                            continue;
                         }
                     }
                 }
@@ -43,6 +44,10 @@ fn test_multiple_require_optimization() {
     let file_contents = r#"
     contract Contract0 {
         function addressInternalBalance() public returns (uint256) {
+
+            uint256 a = 100;
+            uint256 b = 100;
+            uint256 c = 100;
 
             require(true, "some message");
 
