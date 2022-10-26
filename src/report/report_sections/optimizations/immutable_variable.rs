@@ -1,4 +1,6 @@
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Mark storage variables as `immutable` if they never change after contract initialization.
 
 State variables can be declared as constant or immutable. In both cases, the variables cannot be modified after the contract has been constructed. For constant variables, the value has to be fixed at compile-time, while for immutable, it can still be assigned at construction time.
@@ -99,3 +101,7 @@ contract Contract2 {
 │ addConstantValue   ┆ 199             ┆ 199 ┆ 199    ┆ 199 ┆ 1       │
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
+
+"##,
+    )
+}

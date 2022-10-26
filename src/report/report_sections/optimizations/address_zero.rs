@@ -1,3 +1,6 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Use assembly to check for address(0)
 
 ```js
@@ -64,3 +67,6 @@ contract Contract1 {
 │ assemblyOwnerNotZero ┆ 252             ┆ 252 ┆ 252    ┆ 252 ┆ 1       │
 ╰──────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
+"##,
+    )
+}

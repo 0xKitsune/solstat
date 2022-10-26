@@ -1,4 +1,6 @@
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Pack structs
 When creating structs, make sure that the variables are listed in ascending order by data type. The compiler will pack the variables that can fit into one 32 byte slot. If the variables are not listed in ascending order, the compiler may not pack the data into one slot, causing additional `sload` and `sstore` instructions when reading/storing the struct into the contract's storage.
 
@@ -82,3 +84,7 @@ contract Contract1 {
 ╰──────────────────────┴─────────────────┴───────┴────────┴───────┴─────────╯
 
 ```
+
+"##,
+    )
+}

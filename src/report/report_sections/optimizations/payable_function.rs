@@ -1,4 +1,8 @@
-## Use custom errors instead of string error messages
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+## Mark functions as payable (with discretion)
+You can mark public or external functions as payable to save gas. Functions that are not payable have additional logic to check if there was a value sent with a call, however, making a function payable eliminates this check. This optimization should be carefully considered due to potentially unwanted behavior when a function does not need to accept ether.
 
 ```js
 contract GasTest is DSTest {
@@ -10,55 +14,54 @@ contract GasTest is DSTest {
         c1 = new Contract1();
     }
 
-    function testFailGas() public {
-        c0.stringErrorMessage();
-        c1.customErrorMessage();
+    function testGas() public {
+        c0.isNotPayable();
+        c1.isPayable();
     }
 }
 
 contract Contract0 {
-    function stringErrorMessage() public {
-        bool check = false;
-        require(check, "error message");
+    function isNotPayable() public view {
+        uint256 val = 0;
+        val++;
     }
 }
 
 contract Contract1 {
-    error CustomError();
-
-    function customErrorMessage() public {
-        bool check = false;
-        if (!check) {
-            revert CustomError();
-        }
+    function isPayable() public payable {
+        uint256 val = 0;
+        val++;
     }
 }
-
 ```
 
 ### Gas Report
-
 ```js
 ╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
 │ Contract0 contract ┆                 ┆     ┆        ┆     ┆         │
 ╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 34087              ┆ 200             ┆     ┆        ┆     ┆         │
+│ 32081              ┆ 190             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ stringErrorMessage ┆ 218             ┆ 218 ┆ 218    ┆ 218 ┆ 1       │
+│ isNotPayable       ┆ 198             ┆ 198 ┆ 198    ┆ 198 ┆ 1       │
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
 │ Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
 ╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 26881              ┆ 164             ┆     ┆        ┆     ┆         │
+│ 29681              ┆ 178             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ customErrorMessage ┆ 161             ┆ 161 ┆ 161    ┆ 161 ┆ 1       │
+│ isPayable          ┆ 174             ┆ 174 ┆ 174    ┆ 174 ┆ 1       │
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
+
+
+"##,
+    )
+}

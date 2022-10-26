@@ -1,6 +1,10 @@
-## Consider using assembly with overflow/undeflow protection for math (add, sub, mul, div) instead of SafeMath
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 
-Consider using assembly for math instead of Solidity. You can check for overflow/underflow in assembly to ensure safety. If using Solidity versions < 0.8.0 and you are using Safemath, you can gain significant gas savings by using assembly to calculate values and checking for overflow/underflow.
+## Use assembly for math (add, sub, mul, div)
+
+Use assembly for math instead of Solidity. You can check for overflow/underflow in assembly to ensure safety. If using Solidity versions < 0.8.0 and you are using Safemath, you can gain significant gas savings by using assembly to calculate values and checking for overflow/underflow.
 
 ```js
 
@@ -218,3 +222,7 @@ contract Contract7 {
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 
 ```
+
+"##,
+    )
+}

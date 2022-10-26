@@ -1,4 +1,6 @@
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Use `calldata` instead of `memory` for function arguments that do not get mutated.
 Mark data types as `calldata` instead of `memory` where possible. This makes it so that the data is not automatically loaded into memory. If the data passed into the function does not need to be changed (like updating values in an array), it can be passed in as `calldata`. The one exception to this is if the argument must later be passed into another function that takes an argument that specifies `memory` storage. 
 
@@ -114,3 +116,6 @@ contract Contract3 {
 ╰───────────────────────────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
 
 ```
+"##,
+    )
+}

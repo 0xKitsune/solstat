@@ -1,3 +1,7 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+
 ## `unchecked{++i}` instead of `i++` (or use assembly when applicable)
 
 Use `++i` instead of `i++`. This is especially useful in for loops but this optimization can be used anywhere in your code. You can also use `unchecked{++i;}` for even more gas savings but this will not check to see if `i` overflows. For extra safety if you are worried about this, you can add a require statement after the loop checking if `i` is equal to the final incremented value. For best gas savings, use inline assembly, however this limits the functionality you can achieve. For example you cant use Solidity syntax to internally call your own contract within an assembly block and external calls must be done with the `call()` or `delegatecall()` instruction. However when applicable, inline assembly will save much more gas.
@@ -165,3 +169,8 @@ contract Contract4 {
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 
 ```
+
+
+"##,
+    )
+}

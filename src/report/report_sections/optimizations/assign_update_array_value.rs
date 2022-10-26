@@ -1,7 +1,8 @@
-
-## Cache array length during for loop definition.
-A typical for loop definition may look like: `for (uint256 i; i < arr.length; i++){}`. Instead of using `array.length`, cache the array length before the loop, and use the cached value to safe gas. This will avoid an `MLOAD` every loop for arrays stored in memory and an `SLOAD` for arrays stored in storage. This can have significant gas savings for arrays with a large length, especially if the array is stored in storage.
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+## `array[index] += amount` is cheaper than `array[index] = array[index] + amount` (or related variants)
+When updating a value in an array with arithmetic, using `array[index] += amount` is cheaper than `array[index] = array[index] + amount`. This is because you avoid an additonal `mload` when the array is stored in memory, and an `sload` when the array is stored in storage. This can be applied for any arithmetic operation including `+=`, `-=`,`/=`,`*=`,`^=`,`&=`, `%=`, `<<=`,`>>=`, and `>>>=`. This optimization can be particularly significant if the pattern occurs during a loop.
 
 ```js
 
@@ -18,107 +19,108 @@ contract GasTest is DSTest {
         c3 = new Contract3();
     }
 
-    function testGas() public view {
-        uint256[] memory arr = new uint256[](10);
-        c0.nonCachedMemoryListLength(arr);
-        c1.cachedMemoryListLength(arr);
-        c2.nonCachedStorageListLength();
-        c3.cachedStorageListLength();
+    function testGas() public {
+        uint256[] memory data = new uint256[](10);
+
+        uint256 newAmount = 100000;
+        c0.assignMemory(data, newAmount);
+        c1.assignAddMemory(data, newAmount);
+
+        c2.assignStorage(newAmount);
+        c3.assignAddStorage(newAmount);
     }
 }
 
 contract Contract0 {
-    function nonCachedMemoryListLength(uint256[] memory arr) public pure {
-        uint256 j;
-        for (uint256 i; i < arr.length; i++) {
-            j = arr[i] + 10;
-        }
+    function assignMemory(uint256[] memory amounts, uint256 newAmount) public {
+        amounts[0] = amounts[0] + newAmount;
     }
 }
 
 contract Contract1 {
-    function cachedMemoryListLength(uint256[] memory arr) public pure {
-        uint256 j;
-
-        uint256 length = arr.length;
-        for (uint256 i; i < length; i++) {
-            j = arr[i] + 10;
-        }
+    function assignAddMemory(uint256[] memory amounts, uint256 newAmount)
+        public
+    {
+        amounts[0] += newAmount;
     }
 }
 
 contract Contract2 {
-    uint256[] arr = new uint256[](10);
+    uint256[] amounts;
 
-    function nonCachedStorageListLength() public view {
-        uint256 j;
-        for (uint256 i; i < arr.length; i++) {
-            j = arr[i] + 10;
-        }
+    constructor() {
+        amounts = new uint256[](10);
+    }
+
+    function assignStorage(uint256 newAmount) public {
+        amounts[0] = amounts[0] + newAmount;
     }
 }
 
 contract Contract3 {
-    uint256[] arr = new uint256[](10);
+    uint256[] amounts;
 
-    function cachedStorageListLength() public view {
-        uint256 j;
-        uint256 length = arr.length;
+    constructor() {
+        amounts = new uint256[](10);
+    }
 
-        for (uint256 i; i < length; i++) {
-            j = arr[i] + 10;
-        }
+    function assignAddStorage(uint256 newAmount) public {
+        amounts[0] += newAmount;
+        newAmount++;
     }
 }
-
-
 ```
 
 ### Gas Report
+
 ```js
 ╭───────────────────────────────────────────┬─────────────────┬──────┬────────┬──────┬─────────╮
 │ src/test/GasTest.t.sol:Contract0 contract ┆                 ┆      ┆        ┆      ┆         │
 ╞═══════════════════════════════════════════╪═════════════════╪══════╪════════╪══════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆      ┆        ┆      ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 128171                                    ┆ 672             ┆      ┆        ┆      ┆         │
+│ 179420                                    ┆ 928             ┆      ┆        ┆      ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg  ┆ median ┆ max  ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ nonCachedMemoryListLength                 ┆ 3755            ┆ 3755 ┆ 3755   ┆ 3755 ┆ 1       │
+│ assignMemory                              ┆ 3611            ┆ 3611 ┆ 3611   ┆ 3611 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
 ╭───────────────────────────────────────────┬─────────────────┬──────┬────────┬──────┬─────────╮
 │ src/test/GasTest.t.sol:Contract1 contract ┆                 ┆      ┆        ┆      ┆         │
 ╞═══════════════════════════════════════════╪═════════════════╪══════╪════════╪══════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆      ┆        ┆      ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 128777                                    ┆ 675             ┆      ┆        ┆      ┆         │
+│ 174820                                    ┆ 905             ┆      ┆        ┆      ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg  ┆ median ┆ max  ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ cachedMemoryListLength                    ┆ 3733            ┆ 3733 ┆ 3733   ┆ 3733 ┆ 1       │
+│ assignAddMemory                           ┆ 3573            ┆ 3573 ┆ 3573   ┆ 3573 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
 ╭───────────────────────────────────────────┬─────────────────┬───────┬────────┬───────┬─────────╮
 │ src/test/GasTest.t.sol:Contract2 contract ┆                 ┆       ┆        ┆       ┆         │
 ╞═══════════════════════════════════════════╪═════════════════╪═══════╪════════╪═══════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆       ┆        ┆       ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 118474                                    ┆ 539             ┆       ┆        ┆       ┆         │
+│ 144011                                    ┆ 779             ┆       ┆        ┆       ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg   ┆ median ┆ max   ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ nonCachedStorageListLength                ┆ 27979           ┆ 27979 ┆ 27979  ┆ 27979 ┆ 1       │
+│ assignStorage                             ┆ 25052           ┆ 25052 ┆ 25052  ┆ 25052 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴───────┴────────┴───────┴─────────╯
 ╭───────────────────────────────────────────┬─────────────────┬───────┬────────┬───────┬─────────╮
 │ src/test/GasTest.t.sol:Contract3 contract ┆                 ┆       ┆        ┆       ┆         │
 ╞═══════════════════════════════════════════╪═════════════════╪═══════╪════════╪═══════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆       ┆        ┆       ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 118674                                    ┆ 540             ┆       ┆        ┆       ┆         │
+│ 156623                                    ┆ 842             ┆       ┆        ┆       ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg   ┆ median ┆ max   ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ cachedStorageListLength                   ┆ 26984           ┆ 26984 ┆ 26984  ┆ 26984 ┆ 1       │
+│ assignAddStorage                          ┆ 25024           ┆ 25024 ┆ 25024  ┆ 25024 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴───────┴────────┴───────┴─────────╯
 
 ```
+
+"##,
+    )
+}

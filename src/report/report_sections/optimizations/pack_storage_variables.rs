@@ -1,4 +1,6 @@
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Tightly pack storage variables
 When defining storage variables, make sure to declare them in ascending order, according to size. When multiple variables are able to fit into one 256 bit slot, this will save storage size and gas during runtime. For example, if you have a `bool`, `uint256` and a `bool`, instead of defining the variables in the previously mentioned order, defining the two boolean variables first will pack them both into one storage slot since they only take up one byte of storage.
 
@@ -89,3 +91,6 @@ contract Contract1 {
 ╰───────────────────────────────────────────┴─────────────────┴───────┴────────┴───────┴─────────╯
 
 ```
+"##,
+    )
+}
