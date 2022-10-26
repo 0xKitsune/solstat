@@ -10,6 +10,8 @@ use crate::report::report_sections::optimizations::{
     string_errors,
 };
 
+use super::report_sections::optimizations::private_constant;
+
 pub fn generate_optimization_report(
     optimizations: HashMap<Optimization, Vec<(String, Vec<i32>)>>,
 ) -> String {
@@ -67,6 +69,7 @@ pub fn get_optimization_report_section(optimization: Optimization) -> String {
         Optimization::PackStorageVariables => pack_storage_variables::report_section_content(),
         Optimization::PackStructVariables => pack_struct_variables::report_section_content(),
         Optimization::PayableFunction => payable_function::report_section_content(),
+        Optimization::PrivateConstant => private_constant::report_section_content(),
         Optimization::SafeMathPre080 => safe_math_pre_080::report_section_content(),
         Optimization::SafeMathPost080 => safe_math_post_080::report_section_content(),
         Optimization::ShiftMath => shift_math::report_section_content(),
