@@ -1,3 +1,6 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Use assembly when getting a contract's balance of ETH.
 
 You can use `selfbalance()` instead of `address(this).balance` when getting your contract's balance of ETH to save gas. Additionally, you can use `balance(address)` instead of `address.balance()` when getting an external contract's balance of ETH.
@@ -108,3 +111,8 @@ contract Contract3 {
 ╰─────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 
 ```
+
+
+"##,
+    )
+}

@@ -1,4 +1,6 @@
-
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Use assembly to write storage values
 
 ```js
@@ -63,3 +65,7 @@ contract Contract1 {
 │ assemblyUpdateOwner┆ 5236            ┆ 5236 ┆ 5236   ┆ 5236 ┆ 1       │
 ╰────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
 ```
+
+"##,
+    )
+}

@@ -2,29 +2,26 @@ use std::{collections::HashMap, fs};
 
 use crate::analyzer::optimizations::Optimization;
 
+use crate::report::report_sections::optimizations::{
+    address_balance, address_zero, assign_update_array_value, bool_equals_bool, cache_array_length,
+    constant_variable, immutable_variable, increment_decrement, memory_to_calldata,
+    multiple_require, overview, pack_storage_variables, pack_struct_variables, payable_function,
+    safe_math_post_080, safe_math_pre_080, shift_math, solidity_keccak256, solidity_math, sstore,
+    string_errors,
+};
+
 pub fn generate_optimization_report(
     optimizations: HashMap<Optimization, Vec<(String, Vec<i32>)>>,
 ) -> String {
     let mut optimization_report = String::from("");
 
-    let optimization_report_sections_path: String =
-        "./src/report/report_sections/optimizations/".to_owned();
-
-    //Add optimization report overview
-    let overview_section =
-        fs::read_to_string(optimization_report_sections_path.clone() + "overview.md")
-            .expect("Unable to read overview.md");
-
-    optimization_report.push_str((overview_section + "\n").as_str());
+    let mut total_optimizations_found = 0;
 
     for optimization in optimizations {
         if optimization.1.len() > 0 {
             let optimization_target = optimization.0;
 
-            let report_section = get_optimization_report_section(
-                optimization_target,
-                optimization_report_sections_path.clone(),
-            );
+            let report_section = get_optimization_report_section(optimization_target);
 
             let mut matches_section = String::from("### Lines\n");
 
@@ -34,6 +31,8 @@ pub fn generate_optimization_report(
                     matches_section
                         .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
                     matches_section.push_str("\n");
+
+                    total_optimizations_found += 1;
                 }
             }
 
@@ -44,97 +43,36 @@ pub fn generate_optimization_report(
         }
     }
 
-    optimization_report
+    //Add overview to optimization report
+    let mut completed_optimization_report =
+        overview::report_section_content(total_optimizations_found);
+
+    completed_optimization_report.push_str(optimization_report.as_str());
+
+    completed_optimization_report
 }
 
-pub fn get_optimization_report_section(
-    optimization: Optimization,
-    optimization_report_sections_path: String,
-) -> String {
+pub fn get_optimization_report_section(optimization: Optimization) -> String {
     match optimization {
-        Optimization::AddressBalance => {
-            fs::read_to_string(optimization_report_sections_path + "address_balance.md")
-                .expect("Unable to read file")
-        }
-
-        Optimization::AddressZero => {
-            fs::read_to_string(optimization_report_sections_path + "address_zero.md")
-                .expect("Unable to read file")
-        }
-
-        Optimization::AssignUpdateArrayValue => {
-            fs::read_to_string(optimization_report_sections_path + "assign_update_array_value.md")
-                .expect("Unable to read file")
-        }
-
-        Optimization::BoolEqualsBool => {
-            fs::read_to_string(optimization_report_sections_path + "bool_equals_bool.md")
-                .expect("Unable to read file")
-        }
-
-        Optimization::CacheArrayLength => {
-            fs::read_to_string(optimization_report_sections_path + "cache_array_length.md")
-                .expect("Unable to read file")
-        }
-        Optimization::ConstantVariables => {
-            fs::read_to_string(optimization_report_sections_path + "constant_variable.md")
-                .expect("Unable to read file")
-        }
-
-        Optimization::ImmutableVarialbes => {
-            fs::read_to_string(optimization_report_sections_path + "immutable_variable.md")
-                .expect("Unable to read file")
-        }
-        Optimization::IncrementDecrement => {
-            fs::read_to_string(optimization_report_sections_path + "increment_decrement.md")
-                .expect("Unable to read file")
-        }
-        Optimization::MemoryToCalldata => {
-            fs::read_to_string(optimization_report_sections_path + "memory_to_calldata.md")
-                .expect("Unable to read file")
-        }
-        Optimization::MultipleRequire => {
-            fs::read_to_string(optimization_report_sections_path + "multiple_require.md")
-                .expect("Unable to read file")
-        }
-        Optimization::PackStorageVariables => {
-            fs::read_to_string(optimization_report_sections_path + "pack_storage_variables.md")
-                .expect("Unable to read file")
-        }
-        Optimization::PackStructVariables => {
-            fs::read_to_string(optimization_report_sections_path + "pack_struct_variables.md")
-                .expect("Unable to read file")
-        }
-        Optimization::PayableFunction => {
-            fs::read_to_string(optimization_report_sections_path + "payable_function.md")
-                .expect("Unable to read file")
-        }
-        Optimization::SafeMathPre080 => {
-            fs::read_to_string(optimization_report_sections_path + "safe_math_pre_080.md")
-                .expect("Unable to read file")
-        }
-        Optimization::SafeMathPost080 => {
-            fs::read_to_string(optimization_report_sections_path + "safe_math_post_080.md")
-                .expect("Unable to read file")
-        }
-        Optimization::ShiftMath => {
-            fs::read_to_string(optimization_report_sections_path + "shift_math.md")
-                .expect("Unable to read file")
-        }
-        Optimization::SolidityKeccak256 => {
-            fs::read_to_string(optimization_report_sections_path + "solidity_keccak256.md")
-                .expect("Unable to read file")
-        }
-        Optimization::SolidityMath => {
-            fs::read_to_string(optimization_report_sections_path + "solidity_math.md")
-                .expect("Unable to read file")
-        }
-        Optimization::Sstore => fs::read_to_string(optimization_report_sections_path + "sstore.md")
-            .expect("Unable to read file"),
-
-        Optimization::StringErrors => {
-            fs::read_to_string(optimization_report_sections_path + "string_errors.md")
-                .expect("Unable to read file")
-        }
+        Optimization::AddressBalance => address_balance::report_section_content(),
+        Optimization::AddressZero => address_zero::report_section_content(),
+        Optimization::AssignUpdateArrayValue => assign_update_array_value::report_section_content(),
+        Optimization::BoolEqualsBool => bool_equals_bool::report_section_content(),
+        Optimization::CacheArrayLength => cache_array_length::report_section_content(),
+        Optimization::ConstantVariables => constant_variable::report_section_content(),
+        Optimization::ImmutableVarialbes => immutable_variable::report_section_content(),
+        Optimization::IncrementDecrement => increment_decrement::report_section_content(),
+        Optimization::MemoryToCalldata => memory_to_calldata::report_section_content(),
+        Optimization::MultipleRequire => multiple_require::report_section_content(),
+        Optimization::PackStorageVariables => pack_storage_variables::report_section_content(),
+        Optimization::PackStructVariables => pack_struct_variables::report_section_content(),
+        Optimization::PayableFunction => payable_function::report_section_content(),
+        Optimization::SafeMathPre080 => safe_math_pre_080::report_section_content(),
+        Optimization::SafeMathPost080 => safe_math_post_080::report_section_content(),
+        Optimization::ShiftMath => shift_math::report_section_content(),
+        Optimization::SolidityKeccak256 => solidity_keccak256::report_section_content(),
+        Optimization::SolidityMath => solidity_math::report_section_content(),
+        Optimization::Sstore => sstore::report_section_content(),
+        Optimization::StringErrors => string_errors::report_section_content(),
     }
 }

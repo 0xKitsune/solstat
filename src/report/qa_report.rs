@@ -1,15 +1,13 @@
 use std::{collections::HashMap, fs};
 
 use crate::analyzer::qa::QualityAssurance;
+use crate::report::report_sections::qa::overview;
 
 pub fn generate_qa_report(qa_items: HashMap<QualityAssurance, Vec<(String, Vec<i32>)>>) -> String {
     let mut qa_report = String::from("");
 
-    let qa_report_sections_path: String = "./src/report/report_sections/optimizations/".to_owned();
-
     //Add optimization report overview
-    let overview_section = fs::read_to_string(qa_report_sections_path.clone() + "overview.md")
-        .expect("Unable to read overview.md");
+    let overview_section = overview::report_section_content();
 
     qa_report.push_str((overview_section + "\n").as_str());
 
@@ -17,7 +15,7 @@ pub fn generate_qa_report(qa_items: HashMap<QualityAssurance, Vec<(String, Vec<i
         if item.1.len() > 0 {
             let qa_target = item.0;
 
-            let report_section = get_qa_report_section(qa_target, qa_report_sections_path.clone());
+            let report_section = get_qa_report_section(qa_target);
 
             let mut matches_section = String::from("### Lines\n");
 
@@ -40,6 +38,6 @@ pub fn generate_qa_report(qa_items: HashMap<QualityAssurance, Vec<(String, Vec<i
     qa_report
 }
 
-pub fn get_qa_report_section(qa: QualityAssurance, qa_report_sections_path: String) -> String {
+pub fn get_qa_report_section(qa: QualityAssurance) -> String {
     match qa {}
 }

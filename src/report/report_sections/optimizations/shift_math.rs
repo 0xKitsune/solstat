@@ -1,3 +1,7 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+
 ## Right shift or Left shift instead of dividing or multiplying by powers of two
 
 
@@ -108,3 +112,8 @@ contract Contract3 {
 ╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 
 ```
+
+
+"##,
+    )
+}
