@@ -1,3 +1,7 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+
 ## Use multiple require() statments insted of require(expression && expression && ...)
 You can safe gas by breaking up a require statement with multiple conditions, into multiple require statements with a single condition.
 
@@ -59,3 +63,7 @@ contract Contract1 {
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 
 ```
+
+"##,
+    )
+}

@@ -1,7 +1,10 @@
-## Use assembly to hash instead of Solidity
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
+
+## Use custom errors instead of string error messages
 
 ```js
-
 contract GasTest is DSTest {
     Contract0 c0;
     Contract1 c1;
@@ -11,29 +14,30 @@ contract GasTest is DSTest {
         c1 = new Contract1();
     }
 
-    function testGas() public view {
-        c0.solidityHash(2309349, 2304923409);
-        c1.assemblyHash(2309349, 2304923409);
+    function testFailGas() public {
+        c0.stringErrorMessage();
+        c1.customErrorMessage();
     }
 }
 
 contract Contract0 {
-    function solidityHash(uint256 a, uint256 b) public view {
-        //unoptimized
-        keccak256(abi.encodePacked(a, b));
+    function stringErrorMessage() public {
+        bool check = false;
+        require(check, "error message");
     }
 }
 
 contract Contract1 {
-    function assemblyHash(uint256 a, uint256 b) public view {
-        //optimized
-        assembly {
-            mstore(0x00, a)
-            mstore(0x20, b)
-            let hashedVal := keccak256(0x00, 0x40)
+    error CustomError();
+
+    function customErrorMessage() public {
+        bool check = false;
+        if (!check) {
+            revert CustomError();
         }
     }
 }
+
 ```
 
 ### Gas Report
@@ -44,21 +48,24 @@ contract Contract1 {
 ╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 36687              ┆ 214             ┆     ┆        ┆     ┆         │
+│ 34087              ┆ 200             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ solidityHash       ┆ 313             ┆ 313 ┆ 313    ┆ 313 ┆ 1       │
+│ stringErrorMessage ┆ 218             ┆ 218 ┆ 218    ┆ 218 ┆ 1       │
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
 │ Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
 ╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 31281              ┆ 186             ┆     ┆        ┆     ┆         │
+│ 26881              ┆ 164             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ assemblyHash       ┆ 231             ┆ 231 ┆ 231    ┆ 231 ┆ 1       │
+│ customErrorMessage ┆ 161             ┆ 161 ┆ 161    ┆ 161 ┆ 1       │
 ╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
+"##,
+    )
+}
