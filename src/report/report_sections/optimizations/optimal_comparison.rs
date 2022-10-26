@@ -1,3 +1,6 @@
+pub fn report_section_content() -> String {
+    String::from(
+        r##"
 ## Optimal Comparison
 
 When comparing integers, it is cheaper to use strict `>` & `<` operators over `>=` & `<=` operators, even if you must increment or decrement one of the operands. Note: before using this technique, it's important to consider whether incrementing/decrementing one of the operators could result in an over/underflow.
@@ -98,3 +101,8 @@ contract Contract3 {
 │ ltPlusOne                                 ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
+
+
+"##,
+    )
+}

@@ -5,9 +5,9 @@ use crate::analyzer::optimizations::Optimization;
 use crate::report::report_sections::optimizations::{
     address_balance, address_zero, assign_update_array_value, bool_equals_bool, cache_array_length,
     constant_variable, immutable_variable, increment_decrement, memory_to_calldata,
-    multiple_require, overview, pack_storage_variables, pack_struct_variables, payable_function,
-    private_constant, safe_math_post_080, safe_math_pre_080, shift_math, solidity_keccak256,
-    solidity_math, sstore, string_errors,
+    multiple_require, optimal_comparison, overview, pack_storage_variables, pack_struct_variables,
+    payable_function, private_constant, safe_math_post_080, safe_math_pre_080, shift_math,
+    solidity_keccak256, solidity_math, sstore, string_errors,
 };
 
 pub fn generate_optimization_report(
@@ -52,7 +52,6 @@ pub fn generate_optimization_report(
     completed_optimization_report
 }
 
-<<<<<<< HEAD
 pub fn get_optimization_report_section(optimization: Optimization) -> String {
     match optimization {
         Optimization::AddressBalance => address_balance::report_section_content(),
@@ -76,5 +75,6 @@ pub fn get_optimization_report_section(optimization: Optimization) -> String {
         Optimization::SolidityMath => solidity_math::report_section_content(),
         Optimization::Sstore => sstore::report_section_content(),
         Optimization::StringErrors => string_errors::report_section_content(),
+        Optimization::OptimalComparison => optimal_comparison::report_section_content(),
     }
 }
