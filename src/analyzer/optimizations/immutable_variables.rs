@@ -206,7 +206,7 @@ pub fn immutable_variables_optimization(source_unit: SourceUnit) -> HashSet<Loc>
 
 pub fn get_storage_variables_assigned_in_constructor(
     source_unit: SourceUnit,
-    storage_variables: HashMap<String, (Option<pt::VariableAttribute>, Loc)>,
+    storage_variables: HashMap<String, (Option<Vec<pt::VariableAttribute>>, Loc)>,
 ) -> HashMap<String, Loc> {
     let mut potential_immutable_variables: HashMap<String, Loc> = HashMap::new();
 

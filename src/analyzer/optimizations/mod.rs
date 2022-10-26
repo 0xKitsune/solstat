@@ -11,6 +11,7 @@ pub mod multiple_require;
 pub mod pack_storage_variables;
 pub mod pack_struct_variables;
 pub mod payable_function;
+pub mod private_constant;
 pub mod safe_math;
 pub mod shift_math;
 pub mod solidity_keccak256;
@@ -35,6 +36,7 @@ use self::{
     pack_storage_variables::pack_storage_variables_optimization,
     pack_struct_variables::pack_struct_variables_optimization,
     payable_function::payable_function_optimization,
+    private_constant::private_constant_optimization,
     safe_math::{safe_math_post_080_optimization, safe_math_pre_080_optimization},
     shift_math::shift_math_optimization,
     solidity_keccak256::solidity_keccak256_optimization,
@@ -60,6 +62,7 @@ pub enum Optimization {
     PackStorageVariables,
     PackStructVariables,
     PayableFunction,
+    PrivateConstant,
     SafeMathPre080,
     SafeMathPost080,
     ShiftMath,
@@ -83,6 +86,7 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::MultipleRequire,
         Optimization::PackStorageVariables,
         Optimization::PackStructVariables,
+        Optimization::PrivateConstant,
         Optimization::PayableFunction,
         Optimization::SafeMathPre080,
         Optimization::SafeMathPost080,
@@ -107,7 +111,9 @@ pub fn str_to_optimization(opt: &str) -> Optimization {
         "memory_to_calldata" => Optimization::MemoryToCalldata,
         "multiple_require" => Optimization::MultipleRequire,
         "pack_storage_variables" => Optimization::PackStorageVariables,
+        "pack_struct_variables" => Optimization::PackStructVariables,
         "payable_function" => Optimization::PayableFunction,
+        "private_constant" => Optimization::PrivateConstant,
         "safe_math_pre_080" => Optimization::SafeMathPre080,
         "safe_math_post_080" => Optimization::SafeMathPost080,
         "shift_math" => Optimization::ShiftMath,
@@ -190,6 +196,7 @@ pub fn analyze_for_optimization(
         Optimization::PackStorageVariables => pack_storage_variables_optimization(source_unit),
         Optimization::PackStructVariables => pack_struct_variables_optimization(source_unit),
         Optimization::PayableFunction => payable_function_optimization(source_unit),
+        Optimization::PrivateConstant => private_constant_optimization(source_unit),
         Optimization::SafeMathPre080 => safe_math_pre_080_optimization(source_unit),
         Optimization::SafeMathPost080 => safe_math_post_080_optimization(source_unit),
         Optimization::ShiftMath => shift_math_optimization(source_unit),

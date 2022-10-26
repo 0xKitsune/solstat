@@ -12,6 +12,7 @@ pub mod overview;
 pub mod pack_storage_variables;
 pub mod pack_struct_variables;
 pub mod payable_function;
+pub mod private_constant;
 pub mod safe_math_post_080;
 pub mod safe_math_pre_080;
 pub mod shift_math;

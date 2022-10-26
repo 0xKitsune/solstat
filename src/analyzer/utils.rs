@@ -73,8 +73,8 @@ pub fn get_32_byte_storage_variables(
     source_unit: pt::SourceUnit,
     ignore_constants: bool,
     ignore_immutables: bool,
-) -> HashMap<String, (Option<pt::VariableAttribute>, Loc)> {
-    let mut storage_variables: HashMap<String, (Option<pt::VariableAttribute>, Loc)> =
+) -> HashMap<String, (Option<Vec<pt::VariableAttribute>>, Loc)> {
+    let mut storage_variables: HashMap<String, (Option<Vec<pt::VariableAttribute>>, Loc)> =
         HashMap::new();
 
     let target_nodes = extract_target_from_node(Target::ContractDefinition, source_unit.into());
@@ -85,25 +85,23 @@ pub fn get_32_byte_storage_variables(
         if let pt::SourceUnitPart::ContractDefinition(contract_definition) = source_unit_part {
             'outer: for part in contract_definition.parts {
                 if let pt::ContractPart::VariableDefinition(box_variable_definition) = part {
-                    let mut variable_attribute: Option<pt::VariableAttribute> = None;
+                    let mut variable_attributes: Option<Vec<pt::VariableAttribute>> = None;
                     //if the variable is constant, mark constant_variable as true
-                    for attribute in box_variable_definition.attrs {
-                        if let pt::VariableAttribute::Constant(variable_attribute_loc) = attribute {
-                            if ignore_constants {
-                                continue 'outer;
-                            }
-                            variable_attribute =
-                                Some(pt::VariableAttribute::Constant(variable_attribute_loc));
-                        } else if let pt::VariableAttribute::Immutable(variable_attribute_loc) =
-                            attribute
-                        {
-                            if ignore_immutables {
-                                continue 'outer;
-                            }
 
-                            variable_attribute =
-                                Some(pt::VariableAttribute::Immutable(variable_attribute_loc));
+                    if box_variable_definition.attrs.len() > 0 {
+                        for attribute in box_variable_definition.attrs.clone() {
+                            if let pt::VariableAttribute::Constant(_) = attribute {
+                                if ignore_constants {
+                                    continue 'outer;
+                                }
+                            } else if let pt::VariableAttribute::Immutable(_) = attribute {
+                                if ignore_immutables {
+                                    continue 'outer;
+                                }
+                            }
                         }
+
+                        variable_attributes = Some(box_variable_definition.attrs);
                     }
 
                     if let pt::Expression::Type(loc, ty) = box_variable_definition.ty {
@@ -111,7 +109,7 @@ pub fn get_32_byte_storage_variables(
                         } else {
                             storage_variables.insert(
                                 box_variable_definition.name.name,
-                                (variable_attribute, loc),
+                                (variable_attributes, loc),
                             );
                         }
                     }
