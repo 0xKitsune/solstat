@@ -1,6 +1,6 @@
 [package]
 name = "solstat"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "A Solidity static analyzer to identify contract vulnerabilities and gas efficiencies."
