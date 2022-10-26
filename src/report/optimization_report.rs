@@ -6,8 +6,8 @@ use crate::report::report_sections::optimizations::{
     address_balance, address_zero, assign_update_array_value, bool_equals_bool, cache_array_length,
     constant_variable, immutable_variable, increment_decrement, memory_to_calldata,
     multiple_require, overview, pack_storage_variables, pack_struct_variables, payable_function,
-    safe_math_post_080, safe_math_pre_080, shift_math, solidity_keccak256, solidity_math, sstore,
-    string_errors,
+    private_constant, safe_math_post_080, safe_math_pre_080, shift_math, solidity_keccak256,
+    solidity_math, sstore, string_errors,
 };
 
 pub fn generate_optimization_report(
@@ -67,6 +67,7 @@ pub fn get_optimization_report_section(optimization: Optimization) -> String {
         Optimization::PackStorageVariables => pack_storage_variables::report_section_content(),
         Optimization::PackStructVariables => pack_struct_variables::report_section_content(),
         Optimization::PayableFunction => payable_function::report_section_content(),
+        Optimization::PrivateConstant => private_constant::report_section_content(),
         Optimization::SafeMathPre080 => safe_math_pre_080::report_section_content(),
         Optimization::SafeMathPost080 => safe_math_post_080::report_section_content(),
         Optimization::ShiftMath => shift_math::report_section_content(),
