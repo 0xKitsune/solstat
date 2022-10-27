@@ -14,9 +14,11 @@ Below are the currently identified optimizations that solstat identifies. If you
 | increment_decrement       | Use `unchecked{++i}` instead of `i++`, or `++i` (or use assembly when applicable). This also applies to decrementing as well.|
 | memory_to_calldata        | Use `calldata` for function arguments marked as `memory` that do not get mutated.|
 | multiple_require          | Use multiple require() statements instead of require(expression && expression && ...). |
+| optimal_comparison        | Use strict `>` & `<` operators over `>=` & `<=` operators. |
 | pack_storage_variables    | Tightly pack storage variables for efficient contract storage. |
 | pack_struct_variables     | Tightly pack struct variables for efficient contract storage. |
 | payable_function          | Mark functions as payable (with discretion). |
+| private_constant          | Mark constant variables in storage as private to save gas. |
 | safe_math_post_080        | Identifies when SafeMath is being used if the contract using solidity >= 0.8.0. Using SafeMath when using version >= 0.8.0 is redundant and will incur additional gas costs. |
 | safe_math_pre_080         | Identifies when SafeMath is being used if the contract using solidity < 0.8.0. Consider using assembly with overflow/undeflow protection for math (add, sub, mul, div) instead of SafeMath. |
 | shift_math                | Right shift or Left shift instead of dividing or multiplying by powers of two. |

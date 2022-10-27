@@ -4,6 +4,7 @@ pub fn report_section_content() -> String {
 ## Optimal Comparison
 
 When comparing integers, it is cheaper to use strict `>` & `<` operators over `>=` & `<=` operators, even if you must increment or decrement one of the operands. Note: before using this technique, it's important to consider whether incrementing/decrementing one of the operators could result in an over/underflow.
+This optimization is applicable when the optimizer is turned off. 
 
 ```js
 contract GasTest is DSTest {
@@ -21,7 +22,7 @@ contract GasTest is DSTest {
 
     function testGas() public view {
         c0.gte();
-        c1.gtPlusOne();
+        c1.gtPlusMinusOne();
         c2.lte();
         c3.ltPlusOne();
     }
@@ -34,8 +35,8 @@ contract Contract0 {
 }
 
 contract Contract1 {
-    function gtPlusOne() external pure returns (bool) {
-        return 2 > 2 + 1;
+    function gtPlusMinusOne() external pure returns (bool) {
+        return 2 > 2 - 1;
     }
 }
 
@@ -47,7 +48,7 @@ contract Contract2 {
 
 contract Contract3 {
     function ltPlusOne() external pure returns (bool) {
-        return 2 < 2 - 1;
+        return 2 < 2 + 1;
     }
 }
 
@@ -76,7 +77,7 @@ contract Contract3 {
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ gtPlusOne                                 ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
+│ gtPlusMinusOne                            ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
 │ src/test/GasTest.t.sol:Contract2 contract ┆                 ┆     ┆        ┆     ┆         │
