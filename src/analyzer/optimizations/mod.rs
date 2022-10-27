@@ -8,6 +8,7 @@ pub mod immutable_variables;
 pub mod increment_decrement;
 pub mod memory_to_calldata;
 pub mod multiple_require;
+pub mod optimal_comparison;
 pub mod pack_storage_variables;
 pub mod pack_struct_variables;
 pub mod payable_function;
@@ -33,6 +34,7 @@ use self::{
     increment_decrement::increment_decrement_optimization,
     memory_to_calldata::memory_to_calldata_optimization,
     multiple_require::multiple_require_optimization,
+    optimal_comparison::optimal_comparison_optimization,
     pack_storage_variables::pack_storage_variables_optimization,
     pack_struct_variables::pack_struct_variables_optimization,
     payable_function::payable_function_optimization,
@@ -70,6 +72,7 @@ pub enum Optimization {
     SolidityMath,
     Sstore,
     StringErrors,
+    OptimalComparison,
 }
 
 pub fn get_all_optimizations() -> Vec<Optimization> {
@@ -95,6 +98,7 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::SolidityMath,
         Optimization::Sstore,
         Optimization::StringErrors,
+        Optimization::OptimalComparison,
     ]
 }
 
@@ -121,6 +125,7 @@ pub fn str_to_optimization(opt: &str) -> Optimization {
         "solidity_math" => Optimization::SolidityMath,
         "sstore" => Optimization::Sstore,
         "string_errors" => Optimization::StringErrors,
+        "optimal_comparison" => Optimization::OptimalComparison,
 
         other => {
             panic!("Unrecgonized optimization: {}", other)
@@ -204,6 +209,7 @@ pub fn analyze_for_optimization(
         Optimization::SolidityMath => solidity_math_optimization(source_unit),
         Optimization::Sstore => sstore_optimization(source_unit),
         Optimization::StringErrors => string_error_optimization(source_unit),
+        Optimization::OptimalComparison => optimal_comparison_optimization(source_unit),
     };
 
     for loc in locations {
