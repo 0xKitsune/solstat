@@ -4,7 +4,7 @@ pub fn report_section_content() -> String {
 
 ## Consider marking constants as private
 
-Marking constant variables in storage as constant saves gas. Unless a constant variable should be easily accessible by another protocol or offchain logic, consider marking it as private.
+Consider marking constant variables in storage as private to save gas (unless a constant variable should be easily accessible by another protocol or offchain logic).
 
 ```js
 contract GasTest is DSTest {

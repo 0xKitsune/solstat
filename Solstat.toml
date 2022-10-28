@@ -12,6 +12,3 @@ vulnerabilities = []
 
 # QA that each contract will be analyzed for
 qa = []
-
-
-

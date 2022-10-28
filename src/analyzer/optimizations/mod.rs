@@ -8,6 +8,7 @@ pub mod immutable_variables;
 pub mod increment_decrement;
 pub mod memory_to_calldata;
 pub mod multiple_require;
+pub mod optimal_comparison;
 pub mod pack_storage_variables;
 pub mod pack_struct_variables;
 pub mod payable_function;
@@ -20,7 +21,13 @@ pub mod sstore;
 pub mod string_errors;
 mod template;
 
-use std::{collections::HashMap, fs, vec};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    fs,
+    path::PathBuf,
+    str::FromStr,
+    vec,
+};
 
 use self::{
     address_balance::address_balance_optimization,
@@ -33,6 +40,7 @@ use self::{
     increment_decrement::increment_decrement_optimization,
     memory_to_calldata::memory_to_calldata_optimization,
     multiple_require::multiple_require_optimization,
+    optimal_comparison::optimal_comparison_optimization,
     pack_storage_variables::pack_storage_variables_optimization,
     pack_struct_variables::pack_struct_variables_optimization,
     payable_function::payable_function_optimization,
@@ -70,6 +78,7 @@ pub enum Optimization {
     SolidityMath,
     Sstore,
     StringErrors,
+    OptimalComparison,
 }
 
 pub fn get_all_optimizations() -> Vec<Optimization> {
@@ -95,6 +104,7 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::SolidityMath,
         Optimization::Sstore,
         Optimization::StringErrors,
+        Optimization::OptimalComparison,
     ]
 }
 
@@ -121,6 +131,7 @@ pub fn str_to_optimization(opt: &str) -> Optimization {
         "solidity_math" => Optimization::SolidityMath,
         "sstore" => Optimization::Sstore,
         "string_errors" => Optimization::StringErrors,
+        "optimal_comparison" => Optimization::OptimalComparison,
 
         other => {
             panic!("Unrecgonized optimization: {}", other)
@@ -131,9 +142,10 @@ pub fn str_to_optimization(opt: &str) -> Optimization {
 pub fn analyze_dir(
     target_dir: &str,
     optimizations: Vec<Optimization>,
-) -> HashMap<Optimization, Vec<(String, Vec<i32>)>> {
+) -> HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>> {
     //Initialize a new hashmap to keep track of all the optimizations across the target dir
-    let mut optimization_locations: HashMap<Optimization, Vec<(String, Vec<i32>)>> = HashMap::new();
+    let mut optimization_locations: HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>> =
+        HashMap::new();
 
     //For each file in the target dir
     for (i, path) in fs::read_dir(target_dir)
@@ -146,25 +158,35 @@ pub fn analyze_dir(
             .expect(format!("Could not file unwrap path").as_str())
             .path();
 
-        let file_name = file_path
-            .file_name()
-            .expect("Could not unwrap file name to OsStr")
-            .to_str()
-            .expect("Could not convert file name from OsStr to &str")
-            .to_string();
+        if file_path.is_dir() {
+            optimization_locations.extend(analyze_dir(
+                file_path
+                    .as_os_str()
+                    .to_str()
+                    .expect("Could not get nested dir"),
+                optimizations.clone(),
+            ))
+        } else {
+            let file_name = file_path
+                .file_name()
+                .expect("Could not unwrap file name to OsStr")
+                .to_str()
+                .expect("Could not convert file name from OsStr to &str")
+                .to_string();
 
-        let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //For each active optimization
-        for optimization in &optimizations {
-            let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
+            //For each active optimization
+            for optimization in &optimizations {
+                let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
 
-            if line_numbers.len() > 0 {
-                let file_optimizations = optimization_locations
-                    .entry(optimization.clone())
-                    .or_insert(vec![]);
+                if line_numbers.len() > 0 {
+                    let file_optimizations = optimization_locations
+                        .entry(optimization.clone())
+                        .or_insert(vec![]);
 
-                file_optimizations.push((file_name.clone(), line_numbers));
+                    file_optimizations.push((file_name.clone(), line_numbers));
+                }
             }
         }
     }
@@ -176,8 +198,8 @@ pub fn analyze_for_optimization(
     file_contents: &str,
     file_number: usize,
     optimization: Optimization,
-) -> Vec<LineNumber> {
-    let mut line_numbers = vec![];
+) -> BTreeSet<LineNumber> {
+    let mut line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(file_contents, file_number).unwrap().0;
@@ -204,10 +226,11 @@ pub fn analyze_for_optimization(
         Optimization::SolidityMath => solidity_math_optimization(source_unit),
         Optimization::Sstore => sstore_optimization(source_unit),
         Optimization::StringErrors => string_error_optimization(source_unit),
+        Optimization::OptimalComparison => optimal_comparison_optimization(source_unit),
     };
 
     for loc in locations {
-        line_numbers.push(utils::get_line_number(loc.start(), file_contents));
+        line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
     }
 
     line_numbers

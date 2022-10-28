@@ -1,6 +1,11 @@
 pub mod template;
 
-use std::{collections::HashMap, fs};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    env, fs,
+    path::PathBuf,
+    str::FromStr,
+};
 
 use solang_parser::pt::SourceUnit;
 
@@ -25,9 +30,9 @@ pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
 pub fn analyze_dir(
     target_dir: &str,
     vulnerabilities: Vec<Vulnerability>,
-) -> HashMap<Vulnerability, Vec<(String, Vec<i32>)>> {
+) -> HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>> {
     //Initialize a new hashmap to keep track of all the optimizations across the target dir
-    let mut vulnerability_locations: HashMap<Vulnerability, Vec<(String, Vec<i32>)>> =
+    let mut vulnerability_locations: HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>> =
         HashMap::new();
 
     //For each file in the target dir
@@ -41,25 +46,35 @@ pub fn analyze_dir(
             .expect(format!("Could not file unwrap path").as_str())
             .path();
 
-        let file_name = file_path
-            .file_name()
-            .expect("Could not unwrap file name to OsStr")
-            .to_str()
-            .expect("Could not convert file name from OsStr to &str")
-            .to_string();
+        if file_path.is_dir() {
+            vulnerability_locations.extend(analyze_dir(
+                file_path
+                    .as_os_str()
+                    .to_str()
+                    .expect("Could not get nested dir"),
+                vulnerabilities.clone(),
+            ))
+        } else {
+            let file_name = file_path
+                .file_name()
+                .expect("Could not unwrap file name to OsStr")
+                .to_str()
+                .expect("Could not convert file name from OsStr to &str")
+                .to_string();
 
-        let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //For each active optimization
-        for vulnerability in &vulnerabilities {
-            let line_numbers = analyze_for_vulnerability(&file_contents, i, *vulnerability);
+            //For each active optimization
+            for vulnerability in &vulnerabilities {
+                let line_numbers = analyze_for_vulnerability(&file_contents, i, *vulnerability);
 
-            if line_numbers.len() > 0 {
-                let file_optimizations = vulnerability_locations
-                    .entry(vulnerability.clone())
-                    .or_insert(vec![]);
+                if line_numbers.len() > 0 {
+                    let file_optimizations = vulnerability_locations
+                        .entry(vulnerability.clone())
+                        .or_insert(vec![]);
 
-                file_optimizations.push((file_name.clone(), line_numbers));
+                    file_optimizations.push((file_name.clone(), line_numbers));
+                }
             }
         }
     }
@@ -71,11 +86,19 @@ pub fn analyze_for_vulnerability(
     file_contents: &str,
     file_number: usize,
     vulnerability: Vulnerability,
-) -> Vec<LineNumber> {
-    let line_numbers = vec![];
+) -> BTreeSet<LineNumber> {
+    let line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
+
+    // let locations = match vulnerability {
+
+    // };
+
+    // for loc in locations {
+    // line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
+    // }
 
     line_numbers
 }
