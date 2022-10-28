@@ -20,15 +20,16 @@ pub fn generate_optimization_report(
     for optimization in optimizations {
         if optimization.1.len() > 0 {
             let optimization_target = optimization.0;
-
-            let mut matches = optimization.1;
-            matches.dedup();
+            let matches = optimization.1;
 
             let report_section = get_optimization_report_section(optimization_target);
 
             let mut matches_section = String::from("### Lines\n");
 
-            for (file_name, lines) in matches {
+            for (file_name, mut lines) in matches {
+                lines.dedup();
+                lines.sort();
+
                 for line in lines {
                     //- file_name:line_number\n
                     matches_section

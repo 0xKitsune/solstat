@@ -23,7 +23,6 @@ pub fn optimal_comparison_optimization(source_unit: SourceUnit) -> HashSet<Loc> 
         match expression {
             // >= operator
             pt::Expression::MoreEqual(loc, _box_expression_0, _box_expression_1) => {
-                println!("runs");
                 optimization_locations.insert(loc);
             }
 

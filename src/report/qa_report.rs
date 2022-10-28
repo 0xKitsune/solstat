@@ -14,15 +14,16 @@ pub fn generate_qa_report(qa_items: HashMap<QualityAssurance, Vec<(String, Vec<i
     for item in qa_items {
         if item.1.len() > 0 {
             let qa_target = item.0;
-
-            let mut matches = item.1;
-            matches.dedup();
+            let matches = item.1;
 
             let report_section = get_qa_report_section(qa_target);
 
             let mut matches_section = String::from("### Lines\n");
 
-            for (file_name, lines) in matches {
+            for (file_name, mut lines) in matches {
+                lines.dedup();
+                lines.sort();
+
                 for line in lines {
                     //- file_name:line_number\n
                     matches_section
