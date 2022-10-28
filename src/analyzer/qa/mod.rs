@@ -1,6 +1,6 @@
 pub mod template;
 
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, path::PathBuf, str::FromStr};
 
 use solang_parser::pt::SourceUnit;
 
@@ -26,8 +26,7 @@ pub fn analyze_dir(
     qa: Vec<QualityAssurance>,
 ) -> HashMap<QualityAssurance, Vec<(String, Vec<i32>)>> {
     //Initialize a new hashmap to keep track of all the optimizations across the target dir
-    let mut vulnerability_locations: HashMap<QualityAssurance, Vec<(String, Vec<i32>)>> =
-        HashMap::new();
+    let mut qa_locations: HashMap<QualityAssurance, Vec<(String, Vec<i32>)>> = HashMap::new();
 
     //For each file in the target dir
     for (i, path) in fs::read_dir(target_dir)
@@ -40,30 +39,38 @@ pub fn analyze_dir(
             .expect(format!("Could not unwrap file path: {}", i).as_str())
             .path();
 
-        let file_name = file_path
-            .file_name()
-            .expect(format!("Could not unwrap file name to OsStr: {}", i).as_str())
-            .to_str()
-            .expect("Could not convert file name from OsStr to &str")
-            .to_string();
+        if file_path.is_dir() {
+            qa_locations.extend(analyze_dir(
+                file_path
+                    .as_os_str()
+                    .to_str()
+                    .expect("Could not get nested dir"),
+                qa.clone(),
+            ))
+        } else {
+            let file_name = file_path
+                .file_name()
+                .expect(format!("Could not unwrap file name to OsStr: {}", i).as_str())
+                .to_str()
+                .expect("Could not convert file name from OsStr to &str")
+                .to_string();
 
-        let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //For each active optimization
-        for target in &qa {
-            let line_numbers = analyze_for_qa(&file_contents, i, *target);
+            //For each active optimization
+            for target in &qa {
+                let line_numbers = analyze_for_qa(&file_contents, i, *target);
 
-            if line_numbers.len() > 0 {
-                let file_optimizations = vulnerability_locations
-                    .entry(target.clone())
-                    .or_insert(vec![]);
+                if line_numbers.len() > 0 {
+                    let file_optimizations = qa_locations.entry(target.clone()).or_insert(vec![]);
 
-                file_optimizations.push((file_name.clone(), line_numbers));
+                    file_optimizations.push((file_name.clone(), line_numbers));
+                }
             }
         }
     }
 
-    vulnerability_locations
+    qa_locations
 }
 
 pub fn analyze_for_qa(

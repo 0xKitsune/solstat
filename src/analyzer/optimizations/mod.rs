@@ -21,7 +21,7 @@ pub mod sstore;
 pub mod string_errors;
 mod template;
 
-use std::{collections::HashMap, fs, vec};
+use std::{collections::HashMap, fs, path::PathBuf, str::FromStr, vec};
 
 use self::{
     address_balance::address_balance_optimization,
@@ -151,25 +151,35 @@ pub fn analyze_dir(
             .expect(format!("Could not file unwrap path").as_str())
             .path();
 
-        let file_name = file_path
-            .file_name()
-            .expect("Could not unwrap file name to OsStr")
-            .to_str()
-            .expect("Could not convert file name from OsStr to &str")
-            .to_string();
+        if file_path.is_dir() {
+            optimization_locations.extend(analyze_dir(
+                file_path
+                    .as_os_str()
+                    .to_str()
+                    .expect("Could not get nested dir"),
+                optimizations.clone(),
+            ))
+        } else {
+            let file_name = file_path
+                .file_name()
+                .expect("Could not unwrap file name to OsStr")
+                .to_str()
+                .expect("Could not convert file name from OsStr to &str")
+                .to_string();
 
-        let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-        //For each active optimization
-        for optimization in &optimizations {
-            let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
+            //For each active optimization
+            for optimization in &optimizations {
+                let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
 
-            if line_numbers.len() > 0 {
-                let file_optimizations = optimization_locations
-                    .entry(optimization.clone())
-                    .or_insert(vec![]);
+                if line_numbers.len() > 0 {
+                    let file_optimizations = optimization_locations
+                        .entry(optimization.clone())
+                        .or_insert(vec![]);
 
-                file_optimizations.push((file_name.clone(), line_numbers));
+                    file_optimizations.push((file_name.clone(), line_numbers));
+                }
             }
         }
     }
