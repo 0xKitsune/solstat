@@ -1,7 +1,11 @@
-use std::{collections::HashMap, fs};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    fs,
+};
 
 use crate::analyzer::{
-    optimizations::Optimization, qa::QualityAssurance, vulnerabilities::Vulnerability,
+    optimizations::Optimization, qa::QualityAssurance, utils::LineNumber,
+    vulnerabilities::Vulnerability,
 };
 
 use super::{
@@ -10,9 +14,9 @@ use super::{
 };
 
 pub fn generate_report(
-    vulnerabilities: HashMap<Vulnerability, Vec<(String, Vec<i32>)>>,
-    optimizations: HashMap<Optimization, Vec<(String, Vec<i32>)>>,
-    qa: HashMap<QualityAssurance, Vec<(String, Vec<i32>)>>,
+    vulnerabilities: HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>>,
+    optimizations: HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>>,
+    qa: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>>,
 ) {
     let mut solstat_report = String::from("");
 

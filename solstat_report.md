@@ -1,4 +1,4 @@
-# Gas Optimizations - (Total Optimizations 162)
+# Gas Optimizations - (Total Optimizations 67)
 
 The following sections detail the gas optimizations found throughout the codebase. 
 Each optimization is documented with the setup, an explainer for the optimization, a gas report and line identifiers for each optimization across the codebase. For each section's gas report, the optimizer was turned on and set to 10000 runs. 
@@ -8,112 +8,121 @@ You can also easily update the optimizer runs in the `foundry.toml`.
 <br>
 
 
-## Mark storage variables as `constant` if they never change.
+## Optimal Comparison
 
-State variables can be declared as constant or immutable. In both cases, the variables cannot be modified after the contract has been constructed. For constant variables, the value has to be fixed at compile-time, while for immutable, it can still be assigned at construction time.
-
-The compiler does not reserve a storage slot for these variables, and every occurrence is inlined by the respective value.
-
-Compared to regular state variables, the gas costs of constant and immutable variables are much lower. For a constant variable, the expression assigned to it is copied to all the places where it is accessed and also re-evaluated each time. This allows for local optimizations. Immutable variables are evaluated once at construction time and their value is copied to all the places in the code where they are accessed. For these values, 32 bytes are reserved, even if they would fit in fewer bytes. Due to this, constant values can sometimes be cheaper than immutable values.
-
+When comparing integers, it is cheaper to use strict `>` & `<` operators over `>=` & `<=` operators, even if you must increment or decrement one of the operands. Note: before using this technique, it's important to consider whether incrementing/decrementing one of the operators could result in an over/underflow.
+This optimization is applicable when the optimizer is turned off. 
 
 ```js
-
 contract GasTest is DSTest {
     Contract0 c0;
     Contract1 c1;
-    Contract2  c2;
-    
+    Contract2 c2;
+    Contract3 c3;
+
     function setUp() public {
         c0 = new Contract0();
         c1 = new Contract1();
         c2 = new Contract2();
-        
+        c3 = new Contract3();
     }
 
     function testGas() public view {
-        c0.addValue();
-        c1.addImmutableValue();
-        c2.addConstantValue();
+        c0.gte();
+        c1.gtPlusMinusOne();
+        c2.lte();
+        c3.ltPlusOne();
     }
 }
 
 contract Contract0 {
-    uint256 val;
-
-    constructor() {
-        val = 10000;
-    }
-
-    function addValue() public view {
-        uint256 newVal = val + 1000;
+    function gte() external pure returns (bool) {
+        return 2 >= 2;
     }
 }
 
 contract Contract1 {
-    uint256 immutable val;
-
-    constructor() {
-        val = 10000;
-    }
-
-    function addImmutableValue() public view {
-        uint256 newVal = val + 1000;
+    function gtPlusMinusOne() external pure returns (bool) {
+        return 2 > 2 - 1;
     }
 }
 
 contract Contract2 {
-    uint256 constant val = 10;
+    function lte() external pure returns (bool) {
+        return 2 <= 2;
+    }
+}
 
-    function addConstantValue() public view {
-        uint256 newVal = val + 1000;
+contract Contract3 {
+    function ltPlusOne() external pure returns (bool) {
+        return 2 < 2 + 1;
     }
 }
 
 ```
 
 ### Gas Report
+
 ```js
-╭────────────────────┬─────────────────┬──────┬────────┬──────┬─────────╮
-│ Contract0 contract ┆                 ┆      ┆        ┆      ┆         │
-╞════════════════════╪═════════════════╪══════╪════════╪══════╪═════════╡
-│ Deployment Cost    ┆ Deployment Size ┆      ┆        ┆      ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 54593              ┆ 198             ┆      ┆        ┆      ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name      ┆ min             ┆ avg  ┆ median ┆ max  ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ addValue           ┆ 2302            ┆ 2302 ┆ 2302   ┆ 2302 ┆ 1       │
-╰────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
-╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
-╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 38514              ┆ 239             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ addImmutableValue  ┆ 199             ┆ 199 ┆ 199    ┆ 199 ┆ 1       │
-╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ Contract2 contract ┆                 ┆     ┆        ┆     ┆         │
-╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 32287              ┆ 191             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ addConstantValue   ┆ 199             ┆ 199 ┆ 199    ┆ 199 ┆ 1       │
-╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ src/test/GasTest.t.sol:Contract0 contract ┆                 ┆     ┆        ┆     ┆         │
+╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ gte                                       ┆ 330             ┆ 330 ┆ 330    ┆ 330 ┆ 1       │
+╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ src/test/GasTest.t.sol:Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
+╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ gtPlusMinusOne                            ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
+╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ src/test/GasTest.t.sol:Contract2 contract ┆                 ┆     ┆        ┆     ┆         │
+╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ lte                                       ┆ 330             ┆ 330 ┆ 330    ┆ 330 ┆ 1       │
+╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ src/test/GasTest.t.sol:Contract3 contract ┆                 ┆     ┆        ┆     ┆         │
+╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ ltPlusOne                                 ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
+╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
 
 
 
 ### Lines
-- thing.sol:76
-- WardenPledge.sol:76
+- WardenPledge.sol:257
+- WardenPledge.sol:263
+- WardenPledge.sol:445
+- WardenPledge.sol:451
+- WardenPledge.sol:505
+- WardenPledge.sol:511
+- WardenPledge.sol:515
+- WardenPledge.sol:563
+- WardenPledge.sol:602
+- WardenPledge.sol:609
 
 
 
@@ -180,26 +189,6 @@ contract Contract1 {
 
 
 ### Lines
-- thing.sol:167
-- thing.sol:177
-- thing.sol:190
-- thing.sol:216
-- thing.sol:231
-- thing.sol:344
-- thing.sol:439
-- thing.sol:499
-- thing.sol:558
-- thing.sol:597
-- thing.sol:659
-- thing.sol:684
-- thing.sol:697
-- thing.sol:715
-- thing.sol:729
-- thing.sol:742
-- thing.sol:758
-- thing.sol:769
-- thing.sol:776
-- thing.sol:786
 - WardenPledge.sol:167
 - WardenPledge.sol:177
 - WardenPledge.sol:190
@@ -220,172 +209,6 @@ contract Contract1 {
 - WardenPledge.sol:769
 - WardenPledge.sol:776
 - WardenPledge.sol:786
-
-
-
-## Use assembly to check for address(0)
-
-```js
-
-
-contract GasTest is DSTest {
-    Contract0 c0;
-    Contract1 c1;
-
-    function setUp() public {
-        c0 = new Contract0();
-        c1 = new Contract1();
-    }
-
-    function testGas() public view {
-        c0.ownerNotZero(address(this));
-        c1.assemblyOwnerNotZero(address(this));
-    }
-}
-
-contract Contract0 {
-    function ownerNotZero(address _addr) public pure {
-        require(_addr != address(0), "zero address)");
-    }
-}
-
-contract Contract1 {
-    function assemblyOwnerNotZero(address _addr) public pure {
-        assembly {
-            if iszero(_addr) {
-                mstore(0x00, "zero address")
-                revert(0x00, 0x20)
-            }
-        }
-    }
-}
-
-
-```
-
-### Gas Report
-
-```js
-╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ Contract0 contract ┆                 ┆     ┆        ┆     ┆         │
-╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 61311              ┆ 338             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ ownerNotZero       ┆ 258             ┆ 258 ┆ 258    ┆ 258 ┆ 1       │
-╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-╭──────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ Contract1 contract   ┆                 ┆     ┆        ┆     ┆         │
-╞══════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost      ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 44893                ┆ 255             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name        ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ assemblyOwnerNotZero ┆ 252             ┆ 252 ┆ 252    ┆ 252 ┆ 1       │
-╰──────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-```
-
-### Lines
-- thing.sol:355
-- thing.sol:355
-- thing.sol:566
-- thing.sol:605
-- thing.sol:645
-- thing.sol:701
-- thing.sol:716
-- thing.sol:730
-- WardenPledge.sol:355
-- WardenPledge.sol:355
-- WardenPledge.sol:566
-- WardenPledge.sol:605
-- WardenPledge.sol:645
-- WardenPledge.sol:701
-- WardenPledge.sol:716
-- WardenPledge.sol:730
-
-
-
-
-## Consider marking constants as private
-
-Consider marking constant variables in storage as private to save gas (unless a constant variable should be easily accessible by another protocol or offchain logic).
-
-```js
-contract GasTest is DSTest {
-    Contract0 c0;
-    Contract1 c1;
-    
-    function setUp() public {
-        c0 = new Contract0();
-        c1 = new Contract1();
-        
-    }
-    function testGas() public view {
-        uint256 a = 100;
-        c0.addPublicConstant(a);
-        c1.addPrivateConstant(a);
-        
-    }
-}
-contract Contract0 {
-
-    uint256 constant public x = 100;
-
-    function addPublicConstant(uint256 a) external pure returns (uint256) {
-        return a + x;
-    }
-}
-
-contract Contract1 {
-
-        uint256 constant private x = 100;
-
-    function addPrivateConstant(uint256 a) external pure returns (uint256) {
-        return a +x;
-    }
-}
-```
-
-### Gas Report
-
-```js
-╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ src/test/GasTest.t.sol:Contract0 contract ┆                 ┆     ┆        ┆     ┆         │
-╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 92741                                     ┆ 495             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ addPublicConstant                         ┆ 790             ┆ 790 ┆ 790    ┆ 790 ┆ 1       │
-╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ src/test/GasTest.t.sol:Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
-╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 83535                                     ┆ 449             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ addPrivateConstant                        ┆ 768             ┆ 768 ┆ 768    ┆ 768 ┆ 1       │
-╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-```
-
-
-### Lines
-- thing.sol:22
-- thing.sol:23
-- thing.sol:24
-- WardenPledge.sol:22
-- WardenPledge.sol:23
-- WardenPledge.sol:24
 
 
 
@@ -613,126 +436,176 @@ contract Contract7 {
 
 
 ### Lines
-- thing.sol:24
-- thing.sol:204
-- thing.sol:204
-- thing.sol:238
-- thing.sol:238
-- thing.sol:275
-- thing.sol:286
-- thing.sol:300
-- thing.sol:301
-- thing.sol:307
-- thing.sol:307
-- thing.sol:307
-- thing.sol:309
-- thing.sol:309
-- thing.sol:368
-- thing.sol:374
-- thing.sol:377
-- thing.sol:377
-- thing.sol:377
-- thing.sol:379
-- thing.sol:379
-- thing.sol:460
-- thing.sol:462
-- thing.sol:462
-- thing.sol:462
-- thing.sol:465
-- thing.sol:465
-- thing.sol:517
-- thing.sol:518
-- thing.sol:519
-- thing.sol:519
-- thing.sol:519
-- thing.sol:522
-- thing.sol:522
 - WardenPledge.sol:24
 - WardenPledge.sol:204
-- WardenPledge.sol:204
-- WardenPledge.sol:238
 - WardenPledge.sol:238
 - WardenPledge.sol:275
 - WardenPledge.sol:286
 - WardenPledge.sol:300
 - WardenPledge.sol:301
 - WardenPledge.sol:307
-- WardenPledge.sol:307
-- WardenPledge.sol:309
 - WardenPledge.sol:309
 - WardenPledge.sol:368
 - WardenPledge.sol:374
 - WardenPledge.sol:377
-- WardenPledge.sol:377
-- WardenPledge.sol:377
-- WardenPledge.sol:379
 - WardenPledge.sol:379
 - WardenPledge.sol:460
 - WardenPledge.sol:462
-- WardenPledge.sol:462
-- WardenPledge.sol:462
-- WardenPledge.sol:465
 - WardenPledge.sol:465
 - WardenPledge.sol:517
 - WardenPledge.sol:518
-- WardenPledge.sol:519
-- WardenPledge.sol:519
 - WardenPledge.sol:519
 - WardenPledge.sol:522
 
 
 
-## Optimal Comparison
+## Mark storage variables as `constant` if they never change.
 
-When comparing integers, it is cheaper to use strict `>` & `<` operators over `>=` & `<=` operators, even if you must increment or decrement one of the operands. Note: before using this technique, it's important to consider whether incrementing/decrementing one of the operators could result in an over/underflow.
-This optimization is applicable when the optimizer is turned off. 
+State variables can be declared as constant or immutable. In both cases, the variables cannot be modified after the contract has been constructed. For constant variables, the value has to be fixed at compile-time, while for immutable, it can still be assigned at construction time.
+
+The compiler does not reserve a storage slot for these variables, and every occurrence is inlined by the respective value.
+
+Compared to regular state variables, the gas costs of constant and immutable variables are much lower. For a constant variable, the expression assigned to it is copied to all the places where it is accessed and also re-evaluated each time. This allows for local optimizations. Immutable variables are evaluated once at construction time and their value is copied to all the places in the code where they are accessed. For these values, 32 bytes are reserved, even if they would fit in fewer bytes. Due to this, constant values can sometimes be cheaper than immutable values.
+
+
+```js
+
+contract GasTest is DSTest {
+    Contract0 c0;
+    Contract1 c1;
+    Contract2  c2;
+    
+    function setUp() public {
+        c0 = new Contract0();
+        c1 = new Contract1();
+        c2 = new Contract2();
+        
+    }
+
+    function testGas() public view {
+        c0.addValue();
+        c1.addImmutableValue();
+        c2.addConstantValue();
+    }
+}
+
+contract Contract0 {
+    uint256 val;
+
+    constructor() {
+        val = 10000;
+    }
+
+    function addValue() public view {
+        uint256 newVal = val + 1000;
+    }
+}
+
+contract Contract1 {
+    uint256 immutable val;
+
+    constructor() {
+        val = 10000;
+    }
+
+    function addImmutableValue() public view {
+        uint256 newVal = val + 1000;
+    }
+}
+
+contract Contract2 {
+    uint256 constant val = 10;
+
+    function addConstantValue() public view {
+        uint256 newVal = val + 1000;
+    }
+}
+
+```
+
+### Gas Report
+```js
+╭────────────────────┬─────────────────┬──────┬────────┬──────┬─────────╮
+│ Contract0 contract ┆                 ┆      ┆        ┆      ┆         │
+╞════════════════════╪═════════════════╪══════╪════════╪══════╪═════════╡
+│ Deployment Cost    ┆ Deployment Size ┆      ┆        ┆      ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 54593              ┆ 198             ┆      ┆        ┆      ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name      ┆ min             ┆ avg  ┆ median ┆ max  ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ addValue           ┆ 2302            ┆ 2302 ┆ 2302   ┆ 2302 ┆ 1       │
+╰────────────────────┴─────────────────┴──────┴────────┴──────┴─────────╯
+╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
+╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 38514              ┆ 239             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ addImmutableValue  ┆ 199             ┆ 199 ┆ 199    ┆ 199 ┆ 1       │
+╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ Contract2 contract ┆                 ┆     ┆        ┆     ┆         │
+╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 32287              ┆ 191             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ addConstantValue   ┆ 199             ┆ 199 ┆ 199    ┆ 199 ┆ 1       │
+╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+```
+
+
+
+### Lines
+- WardenPledge.sol:76
+
+
+
+
+## Consider marking constants as private
+
+Consider marking constant variables in storage as private to save gas (unless a constant variable should be easily accessible by another protocol or offchain logic).
 
 ```js
 contract GasTest is DSTest {
     Contract0 c0;
     Contract1 c1;
-    Contract2 c2;
-    Contract3 c3;
-
+    
     function setUp() public {
         c0 = new Contract0();
         c1 = new Contract1();
-        c2 = new Contract2();
-        c3 = new Contract3();
+        
     }
-
     function testGas() public view {
-        c0.gte();
-        c1.gtPlusMinusOne();
-        c2.lte();
-        c3.ltPlusOne();
+        uint256 a = 100;
+        c0.addPublicConstant(a);
+        c1.addPrivateConstant(a);
+        
     }
 }
-
 contract Contract0 {
-    function gte() external pure returns (bool) {
-        return 2 >= 2;
+
+    uint256 constant public x = 100;
+
+    function addPublicConstant(uint256 a) external pure returns (uint256) {
+        return a + x;
     }
 }
 
 contract Contract1 {
-    function gtPlusMinusOne() external pure returns (bool) {
-        return 2 > 2 - 1;
+
+        uint256 constant private x = 100;
+
+    function addPrivateConstant(uint256 a) external pure returns (uint256) {
+        return a +x;
     }
 }
-
-contract Contract2 {
-    function lte() external pure returns (bool) {
-        return 2 <= 2;
-    }
-}
-
-contract Contract3 {
-    function ltPlusOne() external pure returns (bool) {
-        return 2 < 2 + 1;
-    }
-}
-
 ```
 
 ### Gas Report
@@ -743,70 +616,30 @@ contract Contract3 {
 ╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+│ 92741                                     ┆ 495             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ gte                                       ┆ 330             ┆ 330 ┆ 330    ┆ 330 ┆ 1       │
+│ addPublicConstant                         ┆ 790             ┆ 790 ┆ 790    ┆ 790 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
 │ src/test/GasTest.t.sol:Contract1 contract ┆                 ┆     ┆        ┆     ┆         │
 ╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
 │ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
+│ 83535                                     ┆ 449             ┆     ┆        ┆     ┆         │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
 │ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ gtPlusMinusOne                            ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
-╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ src/test/GasTest.t.sol:Contract2 contract ┆                 ┆     ┆        ┆     ┆         │
-╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ lte                                       ┆ 330             ┆ 330 ┆ 330    ┆ 330 ┆ 1       │
-╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
-╭───────────────────────────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
-│ src/test/GasTest.t.sol:Contract3 contract ┆                 ┆     ┆        ┆     ┆         │
-╞═══════════════════════════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
-│ Deployment Cost                           ┆ Deployment Size ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ 37487                                     ┆ 218             ┆     ┆        ┆     ┆         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ Function Name                             ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
-│ ltPlusOne                                 ┆ 327             ┆ 327 ┆ 327    ┆ 327 ┆ 1       │
+│ addPrivateConstant                        ┆ 768             ┆ 768 ┆ 768    ┆ 768 ┆ 1       │
 ╰───────────────────────────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
 ```
 
 
-
 ### Lines
-- thing.sol:257
-- thing.sol:263
-- thing.sol:445
-- thing.sol:451
-- thing.sol:505
-- thing.sol:511
-- thing.sol:515
-- thing.sol:563
-- thing.sol:602
-- thing.sol:609
-- WardenPledge.sol:257
-- WardenPledge.sol:263
-- WardenPledge.sol:445
-- WardenPledge.sol:451
-- WardenPledge.sol:505
-- WardenPledge.sol:511
-- WardenPledge.sol:515
-- WardenPledge.sol:563
-- WardenPledge.sol:602
-- WardenPledge.sol:609
+- WardenPledge.sol:22
+- WardenPledge.sol:23
+- WardenPledge.sol:24
 
 
 
@@ -925,8 +758,85 @@ contract Contract3 {
 
 
 ### Lines
-- thing.sol:307
 - WardenPledge.sol:307
+
+
+
+## Use assembly to check for address(0)
+
+```js
+
+
+contract GasTest is DSTest {
+    Contract0 c0;
+    Contract1 c1;
+
+    function setUp() public {
+        c0 = new Contract0();
+        c1 = new Contract1();
+    }
+
+    function testGas() public view {
+        c0.ownerNotZero(address(this));
+        c1.assemblyOwnerNotZero(address(this));
+    }
+}
+
+contract Contract0 {
+    function ownerNotZero(address _addr) public pure {
+        require(_addr != address(0), "zero address)");
+    }
+}
+
+contract Contract1 {
+    function assemblyOwnerNotZero(address _addr) public pure {
+        assembly {
+            if iszero(_addr) {
+                mstore(0x00, "zero address")
+                revert(0x00, 0x20)
+            }
+        }
+    }
+}
+
+
+```
+
+### Gas Report
+
+```js
+╭────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ Contract0 contract ┆                 ┆     ┆        ┆     ┆         │
+╞════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost    ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 61311              ┆ 338             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name      ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ ownerNotZero       ┆ 258             ┆ 258 ┆ 258    ┆ 258 ┆ 1       │
+╰────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+╭──────────────────────┬─────────────────┬─────┬────────┬─────┬─────────╮
+│ Contract1 contract   ┆                 ┆     ┆        ┆     ┆         │
+╞══════════════════════╪═════════════════╪═════╪════════╪═════╪═════════╡
+│ Deployment Cost      ┆ Deployment Size ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ 44893                ┆ 255             ┆     ┆        ┆     ┆         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ Function Name        ┆ min             ┆ avg ┆ median ┆ max ┆ # calls │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ assemblyOwnerNotZero ┆ 252             ┆ 252 ┆ 252    ┆ 252 ┆ 1       │
+╰──────────────────────┴─────────────────┴─────┴────────┴─────┴─────────╯
+```
+
+### Lines
+- WardenPledge.sol:355
+- WardenPledge.sol:566
+- WardenPledge.sol:605
+- WardenPledge.sol:645
+- WardenPledge.sol:701
+- WardenPledge.sol:716
+- WardenPledge.sol:730
 
 
 
@@ -997,11 +907,6 @@ contract Contract1 {
 
 
 ### Lines
-- thing.sol:155
-- thing.sol:157
-- thing.sol:732
-- thing.sol:748
-- thing.sol:761
 - WardenPledge.sol:155
 - WardenPledge.sol:157
 - WardenPledge.sol:732

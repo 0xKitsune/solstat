@@ -1,6 +1,11 @@
 pub mod template;
 
-use std::{collections::HashMap, fs, path::PathBuf, str::FromStr};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    fs,
+    path::PathBuf,
+    str::FromStr,
+};
 
 use solang_parser::pt::SourceUnit;
 
@@ -24,9 +29,10 @@ pub fn str_to_qa(qa: &str) -> QualityAssurance {
 pub fn analyze_dir(
     target_dir: &str,
     qa: Vec<QualityAssurance>,
-) -> HashMap<QualityAssurance, Vec<(String, Vec<i32>)>> {
+) -> HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>> {
     //Initialize a new hashmap to keep track of all the optimizations across the target dir
-    let mut qa_locations: HashMap<QualityAssurance, Vec<(String, Vec<i32>)>> = HashMap::new();
+    let mut qa_locations: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>> =
+        HashMap::new();
 
     //For each file in the target dir
     for (i, path) in fs::read_dir(target_dir)
@@ -77,11 +83,19 @@ pub fn analyze_for_qa(
     file_contents: &str,
     file_number: usize,
     qa: QualityAssurance,
-) -> Vec<LineNumber> {
-    let line_numbers = vec![];
+) -> BTreeSet<LineNumber> {
+    let line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
+
+    // let locations = match qa {
+
+    // };
+
+    // for loc in locations {
+    // line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
+    // }
 
     line_numbers
 }

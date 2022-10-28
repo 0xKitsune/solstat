@@ -1,7 +1,9 @@
+use std::collections::{BTreeSet, HashSet};
 use std::{collections::HashMap, fs};
 
 use crate::analyzer::optimizations::Optimization;
 
+use crate::analyzer::utils::LineNumber;
 use crate::report::report_sections::optimizations::{
     address_balance, address_zero, assign_update_array_value, bool_equals_bool, cache_array_length,
     constant_variable, immutable_variable, increment_decrement, memory_to_calldata,
@@ -11,7 +13,7 @@ use crate::report::report_sections::optimizations::{
 };
 
 pub fn generate_optimization_report(
-    optimizations: HashMap<Optimization, Vec<(String, Vec<i32>)>>,
+    optimizations: HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>>,
 ) -> String {
     let mut optimization_report = String::from("");
 
@@ -27,9 +29,6 @@ pub fn generate_optimization_report(
             let mut matches_section = String::from("### Lines\n");
 
             for (file_name, mut lines) in matches {
-                lines.dedup();
-                lines.sort();
-
                 for line in lines {
                     //- file_name:line_number\n
                     matches_section

@@ -1,6 +1,11 @@
 pub mod template;
 
-use std::{collections::HashMap, env, fs, path::PathBuf, str::FromStr};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    env, fs,
+    path::PathBuf,
+    str::FromStr,
+};
 
 use solang_parser::pt::SourceUnit;
 
@@ -25,9 +30,9 @@ pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
 pub fn analyze_dir(
     target_dir: &str,
     vulnerabilities: Vec<Vulnerability>,
-) -> HashMap<Vulnerability, Vec<(String, Vec<i32>)>> {
+) -> HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>> {
     //Initialize a new hashmap to keep track of all the optimizations across the target dir
-    let mut vulnerability_locations: HashMap<Vulnerability, Vec<(String, Vec<i32>)>> =
+    let mut vulnerability_locations: HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>> =
         HashMap::new();
 
     //For each file in the target dir
@@ -81,11 +86,19 @@ pub fn analyze_for_vulnerability(
     file_contents: &str,
     file_number: usize,
     vulnerability: Vulnerability,
-) -> Vec<LineNumber> {
-    let line_numbers = vec![];
+) -> BTreeSet<LineNumber> {
+    let line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
+
+    // let locations = match vulnerability {
+
+    // };
+
+    // for loc in locations {
+    // line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
+    // }
 
     line_numbers
 }
