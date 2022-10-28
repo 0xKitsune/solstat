@@ -13,10 +13,10 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
 # Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-- [Identified Issues](#identified-optimizations-vulnerabilities-and-qa)
-  - [⚡Optimizations](#⚡identified-gas-optimizations)
-  - [🪲Vulnerabilities](#🪲-identified-vulnerabilities)
-  - [👍Quality Assurance](#👍-identified-qa)
+- [Identified Issues](https://github.com/0xKitsune/solstat/tree/main/docs)
+  - [⚡Optimizations](https://github.com/0xKitsune/solstat/blob/main/docs/indentified-optimizations.md)
+  - [🪲Vulnerabilities](https://github.com/0xKitsune/solstat/blob/main/docs/indentified-vulnerabilities.md)
+  - [👍Quality Assurance](https://github.com/0xKitsune/solstat/blob/main/docs/identified-quality-assurance.md)
 - [Example Reports](https://github.com/0xKitsune/solstat-reports)
 - [Contributing](#contributing)
 
