@@ -17,6 +17,7 @@ A Solidity static analyzer to identify contract vulnerabilities and gas efficien
   - [⚡Optimizations](#⚡identified-gas-optimizations)
   - [🪲Vulnerabilities](#🪲-identified-vulnerabilities)
   - [👍Quality Assurance](#👍-identified-qa)
+- [Example Reports](https://github.com/0xKitsune/solstat-reports)
 - [Contributing](#contributing)
 
 

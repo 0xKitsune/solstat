@@ -20,5 +20,5 @@ fn main() {
 
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
-    println!("{:?}", source_unit);
+    println!("{:#?}", source_unit);
 }
