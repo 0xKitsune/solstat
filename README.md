@@ -54,6 +54,7 @@ Usage: solstat [OPTIONS]
 
 Options:
   -p, --path <PATH>  Path to the directory containing the files solstat will analyze. The default directory is `./contracts`
+  -m, --match-file-name <MATCH_FILE_NAME> Name of the file Solstat will analyze. The default is all files within the provided directory.
   -t, --toml <TOML>  Path to the toml file containing the solstat configuration when not using the default settings.
   -h, --help         Print help information
 ```
