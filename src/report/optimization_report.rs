@@ -14,6 +14,7 @@ use crate::report::report_sections::optimizations::{
 
 pub fn generate_optimization_report(
     optimizations: HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>>,
+    match_file_name: String,
 ) -> String {
     let mut optimization_report = String::from("");
 
@@ -30,12 +31,23 @@ pub fn generate_optimization_report(
 
             for (file_name, mut lines) in matches {
                 for line in lines {
-                    //- file_name:line_number\n
-                    matches_section
-                        .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
-                    matches_section.push_str("\n");
+                    if match_file_name != String::from("") {
+                        if file_name == match_file_name {
+                            //- file_name:line_number\n
+                            matches_section
+                                .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
+                            matches_section.push_str("\n");
 
-                    total_optimizations_found += 1;
+                            total_optimizations_found += 1;
+                        }
+                    } else {
+                        //- file_name:line_number\n
+                        matches_section
+                            .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
+                        matches_section.push_str("\n");
+
+                        total_optimizations_found += 1;
+                    }
                 }
             }
 

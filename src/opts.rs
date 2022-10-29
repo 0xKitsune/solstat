@@ -25,6 +25,13 @@ pub struct Args {
     #[clap(
         short,
         long,
+        help = "Name of the file Solstat will analyze. The default is all files within the provided directory."
+    )]
+    pub match_file_name: Option<String>,
+
+    #[clap(
+        short,
+        long,
         help = "Path to the toml file containing the Solstat configuration when not using the default settings."
     )]
     pub toml: Option<String>,
@@ -32,6 +39,7 @@ pub struct Args {
 
 pub struct Opts {
     pub path: String,
+    pub match_file_name: String,
     pub optimizations: Vec<Optimization>,
     pub vulnerabilities: Vec<Vulnerability>,
     pub qa: Vec<QualityAssurance>,
@@ -40,6 +48,7 @@ pub struct Opts {
 #[derive(serde::Deserialize, Debug)]
 pub struct SolstatToml {
     pub path: String,
+    pub match_file_name: String,
     pub optimizations: Vec<String>,
     pub vulnerabilities: Vec<String>,
     pub qa: Vec<String>,
@@ -102,8 +111,15 @@ To fix this, either add a `./contracts` directory or provide `--path <path_to_co
             String::from("./contracts")
         };
 
+        let match_file_name = if args.match_file_name.is_some() {
+            args.match_file_name.unwrap()
+        } else {
+            String::from("")
+        };
+
         Opts {
             path,
+            match_file_name,
             optimizations,
             vulnerabilities,
             qa,

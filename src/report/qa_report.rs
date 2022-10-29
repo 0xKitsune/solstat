@@ -7,6 +7,7 @@ use crate::report::report_sections::qa::overview;
 
 pub fn generate_qa_report(
     qa_items: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>>,
+    match_file_name: String,
 ) -> String {
     let mut qa_report = String::from("");
 
@@ -26,10 +27,17 @@ pub fn generate_qa_report(
 
             for (file_name, mut lines) in matches {
                 for line in lines {
-                    //- file_name:line_number\n
-                    matches_section
-                        .push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
-                    matches_section.push_str("\n");
+                    if match_file_name != String::from("") {
+                        if file_name == match_file_name {
+                            //- file_name:line_number\n
+                            matches_section.push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
+                            matches_section.push_str("\n");
+                        }
+                    } else {
+                        //- file_name:line_number\n
+                        matches_section.push_str(&(String::from("- ") + &file_name + ":" + &line.to_string()));
+                        matches_section.push_str("\n");
+                    }
                 }
             }
 

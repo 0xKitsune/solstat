@@ -17,21 +17,22 @@ pub fn generate_report(
     vulnerabilities: HashMap<Vulnerability, Vec<(String, BTreeSet<LineNumber>)>>,
     optimizations: HashMap<Optimization, Vec<(String, BTreeSet<LineNumber>)>>,
     qa: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>>,
+    match_file_name: String,
 ) {
     let mut solstat_report = String::from("");
 
     if vulnerabilities.len() > 0 {
-        solstat_report.push_str(&generate_vulnerability_report(vulnerabilities));
+        solstat_report.push_str(&generate_vulnerability_report(vulnerabilities, match_file_name.to_string()));
         solstat_report.push_str("\n\n");
     }
 
     if optimizations.len() > 0 {
-        solstat_report.push_str(&generate_optimization_report(optimizations));
+        solstat_report.push_str(&generate_optimization_report(optimizations, match_file_name.to_string()));
         solstat_report.push_str("\n\n");
     }
 
     if qa.len() > 0 {
-        solstat_report.push_str(&generate_qa_report(qa));
+        solstat_report.push_str(&generate_qa_report(qa, match_file_name.to_string()));
         solstat_report.push_str("\n\n");
     }
 
