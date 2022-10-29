@@ -25,7 +25,7 @@ pub fn generate_optimization_report(
             let optimization_target = optimization.0;
             let matches = optimization.1;
 
-            let report_section = get_optimization_report_section(optimization_target);
+            let mut report_section = get_optimization_report_section(optimization_target);
 
             let mut matches_section = String::from("### Lines\n");
 
@@ -49,6 +49,10 @@ pub fn generate_optimization_report(
                         total_optimizations_found += 1;
                     }
                 }
+            }
+
+            if total_optimizations_found == 0 {
+                report_section = String::from("");
             }
 
             matches_section.push_str("\n\n");
