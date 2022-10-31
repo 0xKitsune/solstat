@@ -9,7 +9,7 @@ use crate::report::report_sections::optimizations::{
     constant_variable, immutable_variable, increment_decrement, memory_to_calldata,
     multiple_require, optimal_comparison, overview, pack_storage_variables, pack_struct_variables,
     payable_function, private_constant, safe_math_post_080, safe_math_pre_080, shift_math,
-    solidity_keccak256, solidity_math, sstore, string_errors,
+    short_revert_string, solidity_keccak256, solidity_math, sstore, string_errors,
 };
 
 pub fn generate_optimization_report(
@@ -79,5 +79,6 @@ pub fn get_optimization_report_section(optimization: Optimization) -> String {
         Optimization::Sstore => sstore::report_section_content(),
         Optimization::StringErrors => string_errors::report_section_content(),
         Optimization::OptimalComparison => optimal_comparison::report_section_content(),
+        Optimization::ShortRevertString => short_revert_string::report_section_content(),
     }
 }

@@ -15,6 +15,7 @@ pub mod payable_function;
 pub mod private_constant;
 pub mod safe_math;
 pub mod shift_math;
+pub mod short_revert_string;
 pub mod solidity_keccak256;
 pub mod solidity_math;
 pub mod sstore;
@@ -47,6 +48,7 @@ use self::{
     private_constant::private_constant_optimization,
     safe_math::{safe_math_post_080_optimization, safe_math_pre_080_optimization},
     shift_math::shift_math_optimization,
+    short_revert_string::short_revert_string_optimization,
     solidity_keccak256::solidity_keccak256_optimization,
     solidity_math::solidity_math_optimization,
     sstore::sstore_optimization,
@@ -79,6 +81,7 @@ pub enum Optimization {
     Sstore,
     StringErrors,
     OptimalComparison,
+    ShortRevertString,
 }
 
 pub fn get_all_optimizations() -> Vec<Optimization> {
@@ -105,6 +108,7 @@ pub fn get_all_optimizations() -> Vec<Optimization> {
         Optimization::Sstore,
         Optimization::StringErrors,
         Optimization::OptimalComparison,
+        Optimization::ShortRevertString,
     ]
 }
 
@@ -132,6 +136,7 @@ pub fn str_to_optimization(opt: &str) -> Optimization {
         "sstore" => Optimization::Sstore,
         "string_errors" => Optimization::StringErrors,
         "optimal_comparison" => Optimization::OptimalComparison,
+        "short_revert_string" => Optimization::ShortRevertString,
 
         other => {
             panic!("Unrecgonized optimization: {}", other)
@@ -229,6 +234,7 @@ pub fn analyze_for_optimization(
         Optimization::Sstore => sstore_optimization(source_unit),
         Optimization::StringErrors => string_error_optimization(source_unit),
         Optimization::OptimalComparison => optimal_comparison_optimization(source_unit),
+        Optimization::ShortRevertString => short_revert_string_optimization(source_unit),
     };
 
     for loc in locations {
