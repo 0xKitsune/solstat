@@ -1,4 +1,5 @@
 pub mod template;
+pub mod unsafe_erc20_operation;
 
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
@@ -9,18 +10,24 @@ use std::{
 
 use solang_parser::pt::SourceUnit;
 
-use super::utils::LineNumber;
+use super::utils::{self, LineNumber};
+
+use unsafe_erc20_operation::unsafe_erc20_operation_vulnerability;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 
-pub enum Vulnerability {}
+pub enum Vulnerability {
+    UnsafeERC20Operation,
+}
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
-    vec![]
+    vec![Vulnerability::UnsafeERC20Operation]
 }
 
 pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
+        "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
+
         other => {
             panic!("Unrecgonized vulnerability: {}", other)
         }
@@ -62,18 +69,20 @@ pub fn analyze_dir(
                 .expect("Could not convert file name from OsStr to &str")
                 .to_string();
 
-            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            if file_name.ends_with(".sol") && !file_name.to_lowercase().contains(".t.sol") {
+                let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-            //For each active optimization
-            for vulnerability in &vulnerabilities {
-                let line_numbers = analyze_for_vulnerability(&file_contents, i, *vulnerability);
+                //For each active optimization
+                for vulnerability in &vulnerabilities {
+                    let line_numbers = analyze_for_vulnerability(&file_contents, i, *vulnerability);
 
-                if line_numbers.len() > 0 {
-                    let file_optimizations = vulnerability_locations
-                        .entry(vulnerability.clone())
-                        .or_insert(vec![]);
+                    if line_numbers.len() > 0 {
+                        let file_optimizations = vulnerability_locations
+                            .entry(vulnerability.clone())
+                            .or_insert(vec![]);
 
-                    file_optimizations.push((file_name.clone(), line_numbers));
+                        file_optimizations.push((file_name.clone(), line_numbers));
+                    }
                 }
             }
         }
@@ -87,18 +96,18 @@ pub fn analyze_for_vulnerability(
     file_number: usize,
     vulnerability: Vulnerability,
 ) -> BTreeSet<LineNumber> {
-    let line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
+    let mut line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
 
-    // let locations = match vulnerability {
+    let locations = match vulnerability {
+        Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
+    };
 
-    // };
-
-    // for loc in locations {
-    // line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
-    // }
+    for loc in locations {
+        line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
+    }
 
     line_numbers
 }
