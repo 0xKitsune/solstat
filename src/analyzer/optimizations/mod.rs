@@ -174,18 +174,20 @@ pub fn analyze_dir(
                 .expect("Could not convert file name from OsStr to &str")
                 .to_string();
 
-            let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
+            if !file_name.to_lowercase().contains(".t.sol") {
+                let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
-            //For each active optimization
-            for optimization in &optimizations {
-                let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
+                //For each active optimization
+                for optimization in &optimizations {
+                    let line_numbers = analyze_for_optimization(&file_contents, i, *optimization);
 
-                if line_numbers.len() > 0 {
-                    let file_optimizations = optimization_locations
-                        .entry(optimization.clone())
-                        .or_insert(vec![]);
+                    if line_numbers.len() > 0 {
+                        let file_optimizations = optimization_locations
+                            .entry(optimization.clone())
+                            .or_insert(vec![]);
 
-                    file_optimizations.push((file_name.clone(), line_numbers));
+                        file_optimizations.push((file_name.clone(), line_numbers));
+                    }
                 }
             }
         }
