@@ -69,7 +69,7 @@ pub fn analyze_dir(
                 .expect("Could not convert file name from OsStr to &str")
                 .to_string();
 
-            if !file_name.to_lowercase().contains(".t.sol") {
+            if file_name.ends_with(".sol") && !file_name.to_lowercase().contains(".t.sol") {
                 let file_contents = fs::read_to_string(&file_path).expect("Unable to read file");
 
                 //For each active optimization
