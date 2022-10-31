@@ -15,43 +15,57 @@ pub fn memory_to_calldata_optimization(source_unit: SourceUnit) -> HashSet<Loc> 
 
     //For each target node that was extracted, check for the optimization patterns
     for node in target_nodes {
-        //Can unwrap because Target::FunctionDefinition will always be a contract part
-        let contract_part = node.contract_part().unwrap();
+        //extract the box function definition depending on if the node is a contract part or a source unit part
+        let box_function_definition = if node.is_contract_part() {
+            let contract_part = node.contract_part().unwrap();
 
-        if let pt::ContractPart::FunctionDefinition(box_function_definition) = contract_part {
-            let mut memory_args =
-                get_function_definition_memory_args(box_function_definition.clone());
+            if let pt::ContractPart::FunctionDefinition(box_function_definition) = contract_part {
+                box_function_definition
+            } else {
+                continue;
+            }
+        } else {
+            //if the Function definition is not a contract part, then it must be a source unit part
+            let contract_part = node.source_unit_part().unwrap();
 
-            if box_function_definition.body.is_some() {
-                let assign_nodes = ast::extract_target_from_node(
-                    Target::Assign,
-                    box_function_definition.body.unwrap().into(),
-                );
+            if let pt::SourceUnitPart::FunctionDefinition(box_function_definition) = contract_part {
+                box_function_definition
+            } else {
+                continue;
+            }
+        };
 
-                for assign_node in assign_nodes {
-                    //Can unwrap because Target::Assign will always be an expression
-                    let expression = assign_node.expression().unwrap();
+        let mut memory_args = get_function_definition_memory_args(box_function_definition.clone());
 
-                    if let pt::Expression::Assign(_, box_expression, _) = expression {
-                        //check if the left hand side is a variable
-                        match *box_expression {
-                            //if assignment is to variable
-                            pt::Expression::Variable(identifier) => {
+        if box_function_definition.body.is_some() {
+            let assign_nodes = ast::extract_target_from_node(
+                Target::Assign,
+                box_function_definition.body.unwrap().into(),
+            );
+
+            for assign_node in assign_nodes {
+                //Can unwrap because Target::Assign will always be an expression
+                let expression = assign_node.expression().unwrap();
+
+                if let pt::Expression::Assign(_, box_expression, _) = expression {
+                    //check if the left hand side is a variable
+                    match *box_expression {
+                        //if assignment is to variable
+                        pt::Expression::Variable(identifier) => {
+                            memory_args.remove(&identifier.name);
+                        }
+
+                        //if assignment is array subscript
+                        pt::Expression::ArraySubscript(_, arr_subscript_box_expression, _) => {
+                            if let pt::Expression::Variable(identifier) =
+                                *arr_subscript_box_expression
+                            {
+                                //remove the variable name from the memory_args hashmap
                                 memory_args.remove(&identifier.name);
                             }
-
-                            //if assignment is array subscript
-                            pt::Expression::ArraySubscript(_, arr_subscript_box_expression, _) => {
-                                if let pt::Expression::Variable(identifier) =
-                                    *arr_subscript_box_expression
-                                {
-                                    //remove the variable name from the memory_args hashmap
-                                    memory_args.remove(&identifier.name);
-                                }
-                            }
-
-                            _ => {}
                         }
+
+                        _ => {}
                     }
                 }
             }
