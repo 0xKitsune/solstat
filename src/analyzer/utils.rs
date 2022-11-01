@@ -5,14 +5,14 @@ use std::collections::HashMap;
 
 pub type LineNumber = i32;
 
-//Returns the size of the type in bytes
+//Returns the size of the type in bits
 pub fn get_type_size(expression: pt::Expression) -> u16 {
     if let pt::Expression::Type(_, ty) = expression {
         match ty {
-            pt::Type::Address => return 256,
-            pt::Type::AddressPayable => return 256,
-            pt::Type::Bytes(_size) => return (_size as u16) * 4,
-            pt::Type::Bool => return 1,
+            pt::Type::Address => return 160,
+            pt::Type::AddressPayable => return 160,
+            pt::Type::Bytes(_size) => return (_size as u16) * 8,
+            pt::Type::Bool => return 8,
             pt::Type::Int(_size) => return _size,
             pt::Type::Uint(_size) => return _size,
             _ => return 256,

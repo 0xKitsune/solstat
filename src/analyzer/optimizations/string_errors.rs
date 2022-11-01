@@ -29,8 +29,8 @@ pub fn string_error_optimization(source_unit: SourceUnit) -> HashSet<Loc> {
                     //if the identifier name is "require"
                     if identifier.name == "require".to_string() {
                         //If the require statement contains strings
-                        if let pt::Expression::StringLiteral(vec_string_literal) =
-                            func_call_expressions[func_call_expressions.len() - 1].clone()
+                        if let Some(pt::Expression::StringLiteral(vec_string_literal)) =
+                            func_call_expressions.last()
                         {
                             optimization_locations.insert(vec_string_literal[0].loc);
                         }

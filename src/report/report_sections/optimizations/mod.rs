@@ -17,6 +17,7 @@ pub mod private_constant;
 pub mod safe_math_post_080;
 pub mod safe_math_pre_080;
 pub mod shift_math;
+pub mod short_revert_string;
 pub mod solidity_keccak256;
 pub mod solidity_math;
 pub mod sstore;

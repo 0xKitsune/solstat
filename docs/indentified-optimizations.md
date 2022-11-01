@@ -26,3 +26,4 @@ Below are the currently identified optimizations that solstat identifies. If you
 | solidity_math             | Use assembly for math (add, sub, mul, div). |
 | sstore                    | Use assembly to write storage values. |
 | string_error              | Use custom errors instead of string error messages for contracts using Solidity version >= 0.8.4.|
+| short_revert_string       | Use revert strings that fit in one word. |
