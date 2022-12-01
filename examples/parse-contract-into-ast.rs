@@ -5,7 +5,7 @@ fn main() {
     
         pragma solidity ^0.8.16;
 
-        contract SimpleStorage {
+        contract SimpleStore {
             uint x;
 
             function set(uint newValue) {

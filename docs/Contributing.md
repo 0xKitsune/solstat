@@ -46,7 +46,7 @@ Each optimization must take one argument called `source_unit` which is of type `
 
 Solstat works under the hood by analyzing an abstract syntax tree representing a Solidity contract for specific patterns that you want to find. For example, if you wanted to find all expressions that use addition in a contract, you could look for the `Target::Add` within the AST.
 
-If this is the first time you are making a PR to Solstat, feel free to check out what the `SimpleStore` contract AST looks like by running `cargo run --example parse-contract-into-ast`. You can replace the SimpleStore contract with any contract code you would like so feel free to use this functionality to look at the AST related to your optimization.
+If this is the first time you are making a PR to Solstat, feel free to check out what the `SimpleStore` contract AST looks like by running `cargo run --example parse-contract-into-ast`. You can replace the `SimpleStore` contract with any contract code you would like, so feel free to use this functionality to look at the AST related to your optimization. 
 
 `SourceUnit` is the root node in an Abstract Syntax Tree created from parsing the contract with `solang_parser::parse()`. Helper functions like `ast::extract_target_from_node` and `ast::extract_targets_from_node` are located in the `Solstat::analyzer::ast` module to extract specfic nodes from the AST. The return value of these functions is `Vec<Node>`, with a `Node` representing a node in the AST.
 
