@@ -43,7 +43,7 @@ cargo install --path .
 # Usage
 Now that you have solstat involved, you can use the `solstat` command from anywhere in your terminal. By default, solstat looks for a `./contracts` directory and analyzes every file within the folder. If you would like to specify the directory solstat should use, you can pass the `--path` flag (ex. `solstat --path <path_to_dir>`). 
 
-In the default configuration, solstat runs analysis for every [currently included Optimization, Vulnerability and QA](https://github.com/0xKitsune/solstat#currently-identified-optimizations-vulnerabilities-and-qa), however if you would like to run analysis for select patterns, you can create a `.toml` file for your custom configuration.  Check out the [default solstat.toml configuration](https://github.com/0xKitsune/solstat/blob/main/solstat.toml) for reference. After creating a custom `.toml` file, make sure to pass the `--toml` flag when running solstat (ex. `solstat --toml <path_to_toml_file>`).
+In the default configuration, solstat runs analysis for every [currently included Optimization, Vulnerability and QA](https://github.com/0xKitsune/solstat#currently-identified-optimizations-vulnerabilities-and-qa), however if you would like to run analysis for select patterns, you can create a `.toml` file for your custom configuration.  Check out the [default solstat.toml configuration](https://github.com/0xKitsune/solstat/blob/main/Solstat.toml) for reference. After creating a custom `.toml` file, make sure to pass the `--toml` flag when running solstat (ex. `solstat --toml <path_to_toml_file>`).
 
 Once solstat runs its analysis, a report will be generated and output as `solstat_report.md`.
 
