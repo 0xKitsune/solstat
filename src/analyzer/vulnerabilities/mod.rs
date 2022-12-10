@@ -1,3 +1,4 @@
+pub mod divide_before_multiply;
 pub mod template;
 pub mod unsafe_erc20_operation;
 
@@ -12,21 +13,29 @@ use solang_parser::pt::SourceUnit;
 
 use super::utils::{self, LineNumber};
 
-use unsafe_erc20_operation::unsafe_erc20_operation_vulnerability;
+use self::{
+    divide_before_multiply::divide_before_multiply_vulnerability,
+    unsafe_erc20_operation::unsafe_erc20_operation_vulnerability,
+};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 
 pub enum Vulnerability {
     UnsafeERC20Operation,
+    DivideBeforeMultiply,
 }
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
-    vec![Vulnerability::UnsafeERC20Operation]
+    vec![
+        Vulnerability::UnsafeERC20Operation,
+        Vulnerability::DivideBeforeMultiply,
+    ]
 }
 
 pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
+        "divide_before_multiply" => Vulnerability::DivideBeforeMultiply,
 
         other => {
             panic!("Unrecgonized vulnerability: {}", other)
@@ -103,6 +112,7 @@ pub fn analyze_for_vulnerability(
 
     let locations = match vulnerability {
         Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
+        Vulnerability::DivideBeforeMultiply => divide_before_multiply_vulnerability(source_unit),
     };
 
     for loc in locations {
