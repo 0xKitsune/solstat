@@ -1,4 +1,5 @@
 pub mod divide_before_multiply;
+pub mod floating_pragma;
 pub mod template;
 pub mod unsafe_erc20_operation;
 
@@ -15,12 +16,14 @@ use super::utils::{self, LineNumber};
 
 use self::{
     divide_before_multiply::divide_before_multiply_vulnerability,
+    floating_pragma::floating_pragma_vulnerability,
     unsafe_erc20_operation::unsafe_erc20_operation_vulnerability,
 };
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 
 pub enum Vulnerability {
+    FloatingPragma,
     UnsafeERC20Operation,
     DivideBeforeMultiply,
 }
@@ -29,11 +32,13 @@ pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
     vec![
         Vulnerability::UnsafeERC20Operation,
         Vulnerability::DivideBeforeMultiply,
+        Vulnerability::FloatingPragma,
     ]
 }
 
 pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
+        "floating_pragma" => Vulnerability::FloatingPragma,
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
         "divide_before_multiply" => Vulnerability::DivideBeforeMultiply,
 
@@ -111,6 +116,7 @@ pub fn analyze_for_vulnerability(
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
 
     let locations = match vulnerability {
+        Vulnerability::FloatingPragma => floating_pragma_vulnerability(source_unit),
         Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
         Vulnerability::DivideBeforeMultiply => divide_before_multiply_vulnerability(source_unit),
     };
