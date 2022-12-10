@@ -3,17 +3,14 @@ use std::collections::HashSet;
 use solang_parser::pt::{self, Loc};
 use solang_parser::{self, pt::SourceUnit};
 
-use crate::analyzer::ast::{extract_targets_from_node, Target};
+use crate::analyzer::ast::{extract_target_from_node, Target};
 
 pub fn divide_before_multiply_vulnerability(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each vulnerability target identified
     let mut vulnerability_locations: HashSet<Loc> = HashSet::new();
 
     //Extract the target nodes from the source_unit
-    let target_nodes = extract_targets_from_node(
-        vec![Target::Multiply, Target::AssignDivide],
-        source_unit.into(),
-    );
+    let target_nodes = extract_target_from_node(Target::Multiply, source_unit.into());
 
     //For each target node that was extracted, check for the vulnerability patterns
     for node in target_nodes {
