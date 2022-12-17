@@ -1,4 +1,5 @@
 pub mod template;
+pub mod unprotected_selfdestruct;
 pub mod unsafe_erc20_operation;
 
 use std::{
