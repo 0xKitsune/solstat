@@ -1,3 +1,4 @@
+pub mod floating_pragma;
 pub mod template;
 pub mod unprotected_selfdestruct;
 pub mod unsafe_erc20_operation;
@@ -13,20 +14,28 @@ use solang_parser::pt::SourceUnit;
 
 use super::utils::{self, LineNumber};
 
-use unsafe_erc20_operation::unsafe_erc20_operation_vulnerability;
+use self::{
+    floating_pragma::floating_pragma_vulnerability,
+    unsafe_erc20_operation::unsafe_erc20_operation_vulnerability,
+};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 
 pub enum Vulnerability {
+    FloatingPragma,
     UnsafeERC20Operation,
 }
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
-    vec![Vulnerability::UnsafeERC20Operation]
+    vec![
+        Vulnerability::FloatingPragma,
+        Vulnerability::UnsafeERC20Operation,
+    ]
 }
 
 pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
+        "floating_pragma" => Vulnerability::FloatingPragma,
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
 
         other => {
@@ -103,6 +112,7 @@ pub fn analyze_for_vulnerability(
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
 
     let locations = match vulnerability {
+        Vulnerability::FloatingPragma => floating_pragma_vulnerability(source_unit),
         Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
     };
 
