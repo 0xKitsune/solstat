@@ -16,6 +16,7 @@ use super::utils::{self, LineNumber};
 
 use self::{
     floating_pragma::floating_pragma_vulnerability,
+    unprotected_selfdestruct::unprotected_selfdestruct_vulnerability,
     unsafe_erc20_operation::unsafe_erc20_operation_vulnerability,
 };
 
@@ -24,12 +25,14 @@ use self::{
 pub enum Vulnerability {
     FloatingPragma,
     UnsafeERC20Operation,
+    UnprotectedSelfdestruct,
 }
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
     vec![
         Vulnerability::FloatingPragma,
         Vulnerability::UnsafeERC20Operation,
+        Vulnerability::UnprotectedSelfdestruct,
     ]
 }
 
@@ -37,6 +40,7 @@ pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
         "floating_pragma" => Vulnerability::FloatingPragma,
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
+        "unprotected_selfdestruct" => Vulnerability::UnprotectedSelfdestruct,
 
         other => {
             panic!("Unrecgonized vulnerability: {}", other)
@@ -114,6 +118,9 @@ pub fn analyze_for_vulnerability(
     let locations = match vulnerability {
         Vulnerability::FloatingPragma => floating_pragma_vulnerability(source_unit),
         Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
+        Vulnerability::UnprotectedSelfdestruct => {
+            unprotected_selfdestruct_vulnerability(source_unit)
+        }
     };
 
     for loc in locations {

@@ -7,7 +7,7 @@ use solang_parser::pt::{
 
 use crate::analyzer::ast::{self, Target};
 
-pub fn _unprotected_selfdestruct_vulnerability(source_unit: SourceUnit) -> HashSet<Loc> {
+pub fn unprotected_selfdestruct_vulnerability(source_unit: SourceUnit) -> HashSet<Loc> {
     //Create a new hashset that stores the location of each vulnerability target identified
     let mut vulnerability_locations: HashSet<Loc> = HashSet::new();
 
@@ -238,6 +238,6 @@ fn test_unprotected_selfdestruct_vulnerability() {
 
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
-    let vulnerability_locations = _unprotected_selfdestruct_vulnerability(source_unit);
+    let vulnerability_locations = unprotected_selfdestruct_vulnerability(source_unit);
     assert_eq!(vulnerability_locations.len(), 2)
 }
