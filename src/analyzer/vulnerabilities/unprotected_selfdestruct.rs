@@ -11,19 +11,6 @@ pub fn _unprotected_selfdestruct_vulnerability(source_unit: SourceUnit) -> HashS
     //Create a new hashset that stores the location of each vulnerability target identified
     let mut vulnerability_locations: HashSet<Loc> = HashSet::new();
 
-    // what this vulnerability check does:
-    // 1. extract all function definitions
-    // 2. remove constructors
-    // 3. take only public or external functions
-    // 4. check if there are any "suicide" or "selfdestruct" calls inside
-    // 5. implement an "is_protected" helper that checks for modifiers and conditions
-    //   5.1. check if there are any modifiers which contain "only" in the name
-    //        (suggesting that some protection has been devised, and assuming it is safe)
-    //   5.2. if there aren't, check for conditions:
-    //      5.2.1. either where msg.sender is used as argument (e.g. `check(msg.sender)`)
-    //      5.2.2. or where msg.sender is used in a condition (e.g. `msg.sender == owner`)
-    // 6. add loc of the nodes that pass all the criteria to the vulnerability_locations
-
     let contract_definition_nodes =
         ast::extract_target_from_node(Target::ContractDefinition, source_unit.into());
 
@@ -63,10 +50,19 @@ pub fn _unprotected_selfdestruct_vulnerability(source_unit: SourceUnit) -> HashS
                             if let Expression::FunctionCall(loc, box_identifier, ..) = expression {
                                 //If the function is a selfdestruct call
                                 if _is_selfdestruct(box_identifier) {
-                                    //Check if the function is protected. If it isn't, add the loc to the vulnerabilities
-                                    if !_is_protected(&box_function_definition) {
-                                        vulnerability_locations.insert(loc);
+                                    //Check if a function is protected using modifiers or conditions.
+                                    //This check is not exhaustive. For instance, it does not check if the modifier
+                                    //is implemented correctly. It only checks if the modifier name contains the word "only".
+                                    //Otherwise, it checks if there are any conditions on `msg.sender` applied.
+                                    if _contains_protection_modifiers(&box_function_definition)
+                                        || _contains_msg_sender_conditions(&box_function_definition)
+                                    {
+                                        continue;
                                     }
+
+                                    //If the function is not protected, add the loc of the
+                                    //selfdestruct call to the vulnerability_locations set.
+                                    vulnerability_locations.insert(loc);
                                 }
                             }
                         }
@@ -103,6 +99,7 @@ fn _is_public_or_external(function_definition: &Box<FunctionDefinition>) -> bool
     public_or_external
 }
 
+//Check if a given function's name is "selfdestruct" or "suicide"
 fn _is_selfdestruct(box_identifier: Box<Expression>) -> bool {
     let mut is_selfdestruct = false;
     if let Expression::Variable(identifier) = *box_identifier {
@@ -115,68 +112,90 @@ fn _is_selfdestruct(box_identifier: Box<Expression>) -> bool {
     is_selfdestruct
 }
 
-//Check if a function is protected using modifiers or conditions. Return false otherwise.
-//This check is not exhaustive and can be improved. For example, it does not check if the modifier
-//is implemented correctly. It only checks if the modifier name contains the word "only".
-//Otherwise, only checks if there are any conditions on "msg.sender" applied.
-fn _is_protected(function_definition: &Box<FunctionDefinition>) -> bool {
-    if function_definition.attributes.len() > 0 {
-        for attr in &function_definition.attributes {
-            match attr {
-                //If the function has a modifier
-                FunctionAttribute::BaseOrModifier(_, base) => {
-                    let Base { name, .. } = base;
-                    let IdentifierPath { identifiers, .. } = name;
+//Check if a given function contains any modifier with "only" in its name
+fn _contains_protection_modifiers(function_definition: &Box<FunctionDefinition>) -> bool {
+    //If the function has no arguments, early-return false
+    if function_definition.attributes.len() == 0 {
+        return false;
+    }
 
-                    for identifier in identifiers {
-                        //If the modifier name contains "only"
-                        if identifier.name.contains("only") {
-                            return true;
-                        }
+    for attr in &function_definition.attributes {
+        match attr {
+            //If the function has any modifier
+            FunctionAttribute::BaseOrModifier(_, Base { name, .. }) => {
+                let IdentifierPath { identifiers, .. } = name;
+
+                for identifier in identifiers {
+                    //If the modifier name contains "only"
+                    if identifier.name.contains("only") {
+                        return true;
                     }
                 }
-                _ => {}
             }
+            _ => {}
         }
     }
 
-    //If there are no modifiers, check if there are any conditions applied on msg.sender
-    if function_definition.body.is_some() {
-        let function_body_nodes = ast::extract_target_from_node(
-            Target::FunctionCall,
-            function_definition.body.clone().unwrap().into(),
-        );
+    return false;
+}
 
-        for node in function_body_nodes {
-            //We can use unwrap because Target::MemberAccess is an expression
-            let expression = node.expression().unwrap();
+//Check if there are any conditions applied on msg.sender
+//examples: `require(msg.sender == owner)` or `check(msg.sender)`
+fn _contains_msg_sender_conditions(function_definition: &Box<FunctionDefinition>) -> bool {
+    //If the function has no body, early-return false
+    if function_definition.body.is_none() {
+        return false;
+    }
 
-            if let Expression::FunctionCall(_, box_identifier, vec_expression) = expression {
-                if _is_selfdestruct(box_identifier) {
-                    continue;
-                }
+    let function_body_nodes = ast::extract_target_from_node(
+        Target::FunctionCall,
+        function_definition.body.clone().unwrap().into(),
+    );
 
-                for expression in vec_expression {
-                    match expression {
-                        Expression::Equal(_, box_expression, _) => {
-                            if let Expression::MemberAccess(_, box_expression, identifier) =
+    for node in function_body_nodes {
+        //We can use unwrap because Target::MemberAccess is an expression
+        let expression = node.expression().unwrap();
+
+        if let Expression::FunctionCall(_, box_identifier, function_args) = expression {
+            //Skip if the function call is a selfdestruct, as it does not affect this vulnerability
+            if _is_selfdestruct(box_identifier) {
+                continue;
+            }
+
+            for expression in function_args {
+                match expression {
+                    //Match for both `function(msg.sender == owner)` or `function(msg.sender != owner)`
+                    Expression::Equal(_, box_expression, _)
+                    | Expression::NotEqual(_, box_expression, _) => {
+                        if let Expression::MemberAccess(_, box_expression, identifier) =
+                            *box_expression
+                        {
+                            //If the member access identifier is "msg.sender" the function is considered protected
+                            let Identifier { name: right, .. } = identifier;
+                            if let Expression::Variable(Identifier { name: left, .. }) =
                                 *box_expression
                             {
-                                //If the member access identifier is "msg.sender" the function is considered protected
-                                let Identifier { name: right, .. } = identifier;
-                                if let Expression::Variable(Identifier { name: left, .. }) =
-                                    *box_expression
-                                {
-                                    if left == "msg" && right == "sender" {
-                                        return true;
-                                    }
+                                if left == "msg" && right == "sender" {
+                                    return true;
                                 }
                             }
                         }
+                    }
 
-                        _ => {}
-                    };
-                }
+                    //Match for `function(msg.sender)`
+                    Expression::MemberAccess(_, box_expression, identifier) => {
+                        //If the member access identifier is "msg.sender" the function is considered protected
+                        let Identifier { name: right, .. } = identifier;
+                        if let Expression::Variable(Identifier { name: left, .. }) = *box_expression
+                        {
+                            if left == "msg" && right == "sender" {
+                                return true;
+                            }
+                        }
+                    }
+
+                    _ => {}
+                };
             }
         }
     }
