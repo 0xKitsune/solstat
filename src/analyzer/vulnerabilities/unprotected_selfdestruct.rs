@@ -170,7 +170,7 @@ fn _contains_msg_sender_conditions(function_definition: &Box<FunctionDefinition>
                         if let Expression::MemberAccess(_, box_expression, identifier) =
                             *box_expression
                         {
-                            //If the member access identifier is "msg.sender" the function is considered protected
+                            //If the member access identifier is "msg.sender"
                             let Identifier { name: right, .. } = identifier;
                             if let Expression::Variable(Identifier { name: left, .. }) =
                                 *box_expression
@@ -184,7 +184,7 @@ fn _contains_msg_sender_conditions(function_definition: &Box<FunctionDefinition>
 
                     //Match for `function(msg.sender)`
                     Expression::MemberAccess(_, box_expression, identifier) => {
-                        //If the member access identifier is "msg.sender" the function is considered protected
+                        //If the member access identifier is "msg.sender"
                         let Identifier { name: right, .. } = identifier;
                         if let Expression::Variable(Identifier { name: left, .. }) = *box_expression
                         {
