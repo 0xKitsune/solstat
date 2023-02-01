@@ -1,6 +1,7 @@
 pub mod divide_before_multiply;
 pub mod floating_pragma;
 pub mod template;
+pub mod unprotected_selfdestruct;
 pub mod unsafe_erc20_operation;
 
 use std::{
@@ -17,6 +18,7 @@ use super::utils::{self, LineNumber};
 use self::{
     divide_before_multiply::divide_before_multiply_vulnerability,
     floating_pragma::floating_pragma_vulnerability,
+    unprotected_selfdestruct::unprotected_selfdestruct_vulnerability,
     unsafe_erc20_operation::unsafe_erc20_operation_vulnerability,
 };
 
@@ -25,12 +27,14 @@ use self::{
 pub enum Vulnerability {
     FloatingPragma,
     UnsafeERC20Operation,
+    UnprotectedSelfdestruct,
     DivideBeforeMultiply,
 }
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
     vec![
         Vulnerability::UnsafeERC20Operation,
+        Vulnerability::UnprotectedSelfdestruct,
         Vulnerability::DivideBeforeMultiply,
         Vulnerability::FloatingPragma,
     ]
@@ -40,8 +44,8 @@ pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
     match vuln.to_lowercase().as_str() {
         "floating_pragma" => Vulnerability::FloatingPragma,
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
+        "unprotected_selfdestruct" => Vulnerability::UnprotectedSelfdestruct,
         "divide_before_multiply" => Vulnerability::DivideBeforeMultiply,
-
         other => {
             panic!("Unrecgonized vulnerability: {}", other)
         }
@@ -118,6 +122,9 @@ pub fn analyze_for_vulnerability(
     let locations = match vulnerability {
         Vulnerability::FloatingPragma => floating_pragma_vulnerability(source_unit),
         Vulnerability::UnsafeERC20Operation => unsafe_erc20_operation_vulnerability(source_unit),
+        Vulnerability::UnprotectedSelfdestruct => {
+            unprotected_selfdestruct_vulnerability(source_unit)
+        }
         Vulnerability::DivideBeforeMultiply => divide_before_multiply_vulnerability(source_unit),
     };
 
