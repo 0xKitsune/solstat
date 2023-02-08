@@ -5,7 +5,9 @@ use crate::analyzer::qa::QualityAssurance;
 use crate::analyzer::utils::LineNumber;
 use crate::report::report_sections::qa::overview;
 
-use super::report_sections::qa::constructor_order;
+use super::report_sections::qa::{
+    constructor_order, private_func_leading_underscore, private_vars_leading_underscore,
+};
 
 pub fn generate_qa_report(
     qa_items: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>>,
@@ -48,5 +50,11 @@ pub fn generate_qa_report(
 pub fn get_qa_report_section(qa: QualityAssurance) -> String {
     match qa {
         QualityAssurance::ConstructorOrder => constructor_order::report_section_content(),
+        QualityAssurance::PrivateVarsLeadingUnderscore => {
+            private_vars_leading_underscore::report_section_content()
+        }
+        QualityAssurance::PrivateFuncLeadingUnderscore => {
+            private_func_leading_underscore::report_section_content()
+        }
     }
 }
