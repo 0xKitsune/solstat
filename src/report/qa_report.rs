@@ -1,9 +1,11 @@
-use std::collections::{BTreeSet, HashSet};
-use std::{collections::HashMap, fs};
+use std::collections::BTreeSet;
+use std::collections::HashMap;
 
 use crate::analyzer::qa::QualityAssurance;
 use crate::analyzer::utils::LineNumber;
 use crate::report::report_sections::qa::overview;
+
+use super::report_sections::qa::constructor_order;
 
 pub fn generate_qa_report(
     qa_items: HashMap<QualityAssurance, Vec<(String, BTreeSet<LineNumber>)>>,
@@ -24,7 +26,7 @@ pub fn generate_qa_report(
 
             let mut matches_section = String::from("### Lines\n");
 
-            for (file_name, mut lines) in matches {
+            for (file_name, lines) in matches {
                 for line in lines {
                     //- file_name:line_number\n
                     matches_section
@@ -44,5 +46,7 @@ pub fn generate_qa_report(
 }
 
 pub fn get_qa_report_section(qa: QualityAssurance) -> String {
-    match qa {}
+    match qa {
+        QualityAssurance::ConstructorOrder => constructor_order::report_section_content(),
+    }
 }

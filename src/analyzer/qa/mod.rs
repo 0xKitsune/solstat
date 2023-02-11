@@ -1,3 +1,4 @@
+pub mod constructor_order;
 pub mod template;
 
 use std::{
@@ -7,19 +8,22 @@ use std::{
     str::FromStr,
 };
 
-use solang_parser::pt::SourceUnit;
+use self::constructor_order::constructor_order_qa;
 
-use super::utils::LineNumber;
+use super::utils::{self, LineNumber};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum QualityAssurance {}
+pub enum QualityAssurance {
+    ConstructorOrder,
+}
 
 pub fn get_all_qa() -> Vec<QualityAssurance> {
-    vec![]
+    vec![QualityAssurance::ConstructorOrder]
 }
 
 pub fn str_to_qa(qa: &str) -> QualityAssurance {
     match qa.to_lowercase().as_str() {
+        "constructor_order" => QualityAssurance::ConstructorOrder,
         other => {
             panic!("Unrecgonized qa: {}", other)
         }
@@ -87,18 +91,19 @@ pub fn analyze_for_qa(
     file_number: usize,
     qa: QualityAssurance,
 ) -> BTreeSet<LineNumber> {
-    let line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
+    let mut line_numbers: BTreeSet<LineNumber> = BTreeSet::new();
 
     //Parse the file into a the ast
     let source_unit = solang_parser::parse(&file_contents, file_number).unwrap().0;
 
-    // let locations = match qa {
+    let locations = match qa {
+        QualityAssurance::ConstructorOrder => constructor_order_qa(source_unit),
+        _ => panic!("Location dont recognized"),
+    };
 
-    // };
-
-    // for loc in locations {
-    // line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
-    // }
+    for loc in locations {
+        line_numbers.insert(utils::get_line_number(loc.start(), file_contents));
+    }
 
     line_numbers
 }
