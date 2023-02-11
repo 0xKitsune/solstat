@@ -1,3 +1,4 @@
+pub mod arbitrary_from_in_transferfrom;
 pub mod divide_before_multiply;
 pub mod floating_pragma;
 pub mod template;
@@ -5,17 +6,14 @@ pub mod unprotected_selfdestruct;
 pub mod unsafe_erc20_operation;
 
 use std::{
-    collections::{BTreeSet, HashMap, HashSet},
-    env, fs,
-    path::PathBuf,
-    str::FromStr,
+    collections::{BTreeSet, HashMap},
+    fs,
 };
-
-use solang_parser::pt::SourceUnit;
 
 use super::utils::{self, LineNumber};
 
 use self::{
+    arbitrary_from_in_transferfrom::arbitrary_from_in_transferfrom_vulnerability,
     divide_before_multiply::divide_before_multiply_vulnerability,
     floating_pragma::floating_pragma_vulnerability,
     unprotected_selfdestruct::unprotected_selfdestruct_vulnerability,
@@ -29,6 +27,7 @@ pub enum Vulnerability {
     UnsafeERC20Operation,
     UnprotectedSelfdestruct,
     DivideBeforeMultiply,
+    ArbitraryFromInTransferFrom,
 }
 
 pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
@@ -37,6 +36,7 @@ pub fn get_all_vulnerabilities() -> Vec<Vulnerability> {
         Vulnerability::UnprotectedSelfdestruct,
         Vulnerability::DivideBeforeMultiply,
         Vulnerability::FloatingPragma,
+        Vulnerability::ArbitraryFromInTransferFrom,
     ]
 }
 
@@ -46,6 +46,7 @@ pub fn str_to_vulnerability(vuln: &str) -> Vulnerability {
         "unsafe_erc20_operation" => Vulnerability::UnsafeERC20Operation,
         "unprotected_selfdestruct" => Vulnerability::UnprotectedSelfdestruct,
         "divide_before_multiply" => Vulnerability::DivideBeforeMultiply,
+        "arbitrary_from_in_transferfrom" => Vulnerability::ArbitraryFromInTransferFrom,
         other => {
             panic!("Unrecgonized vulnerability: {}", other)
         }
@@ -126,6 +127,9 @@ pub fn analyze_for_vulnerability(
             unprotected_selfdestruct_vulnerability(source_unit)
         }
         Vulnerability::DivideBeforeMultiply => divide_before_multiply_vulnerability(source_unit),
+        Vulnerability::ArbitraryFromInTransferFrom => {
+            arbitrary_from_in_transferfrom_vulnerability(source_unit)
+        }
     };
 
     for loc in locations {
