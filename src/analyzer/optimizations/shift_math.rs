@@ -40,31 +40,38 @@ fn check_if_inputs_are_power_of_two(
     box_expression_1: Box<Expression>,
 ) -> bool {
     //create a boolean to determine if either of the inputs are a power of two
-    let mut is_even: bool = false;
 
     //if the first expression is a number literal that is a power of 2
     if let Expression::NumberLiteral(_, val_string, _) = *box_expression {
-        let value = val_string
-            .parse::<u32>()
-            .expect("Could not parse NumberLiteral value from string to u32");
-
-        if (value != 0) && ((value & (value - 1)) == 0) {
-            is_even = true;
+        match val_string.parse::<u128>() {
+            Ok(value) => {
+                if (value != 0) && ((value & (value - 1)) == 0) {
+                    return true;
+                }
+            }
+            Err(_) => println!(
+                "Could not parse NumberLiteral value '{}' from string to u128",
+                val_string
+            ),
         }
     }
 
     //if the first expression is a number literal that is a power of 2
     if let Expression::NumberLiteral(_, val_string, _) = *box_expression_1 {
-        let value = val_string
-            .parse::<u32>()
-            .expect("Could not parse NumberLiteral value from string to u32");
-
-        if (value != 0) && ((value & (value - 1)) == 0) {
-            is_even = true;
+        match val_string.parse::<u128>() {
+            Ok(value) => {
+                if (value != 0) && ((value & (value - 1)) == 0) {
+                    return true;
+                }
+            }
+            Err(_) => println!(
+                "Could not parse NumberLiteral value '{}' from string to u128",
+                val_string
+            ),
         }
     }
 
-    is_even
+    return false;
 }
 
 #[test]
@@ -80,13 +87,15 @@ fn test_shift_math_optimization() {
             uint256 c = a * b;
 
             uint256 d = (a * b) * 2;
+            uint256 q = 340282366920938463463374607431768211455 * 2;
+            uint256 p = 340282366920938463463374607431768211456 * 3;
+
         }
     }
     "#;
-
     let source_unit = solang_parser::parse(file_contents, 0).unwrap().0;
 
     let optimization_locations = shift_math_optimization(source_unit);
 
-    assert_eq!(optimization_locations.len(), 3)
+    assert_eq!(optimization_locations.len(), 4)
 }
