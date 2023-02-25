@@ -37,6 +37,11 @@ pub fn memory_to_calldata_optimization(source_unit: SourceUnit) -> HashSet<Loc> 
 
         let mut memory_args = get_function_definition_memory_args(box_function_definition.clone());
 
+        // Constructor can only use `memory`
+        if box_function_definition.ty == pt::FunctionTy::Constructor {
+            continue;
+        }
+
         if box_function_definition.body.is_some() {
             let assign_nodes = ast::extract_target_from_node(
                 Target::Assign,
@@ -111,6 +116,14 @@ fn test_memory_to_calldata_optimization() {
     let file_contents = r#"
    
 contract Contract1 {
+
+    constructor(uint256[] memory arr){
+        uint256 j;
+        for (uint256 i; i < arr.length; i++) {
+            j = arr[i] + 10;
+        }
+    }
+
     //loop with i++
     function memoryArray(uint256[] memory arr) public {
         uint256 j;
