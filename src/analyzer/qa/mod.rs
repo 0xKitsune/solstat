@@ -1,4 +1,6 @@
 pub mod constructor_order;
+pub mod private_func_leading_underscore;
+pub mod private_vars_leading_underscore;
 pub mod template;
 
 use std::{
@@ -8,22 +10,34 @@ use std::{
     str::FromStr,
 };
 
-use self::constructor_order::constructor_order_qa;
+use self::{
+    constructor_order::constructor_order_qa,
+    private_func_leading_underscore::private_func_leading_underscore,
+    private_vars_leading_underscore::private_vars_leading_underscore,
+};
 
 use super::utils::{self, LineNumber};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum QualityAssurance {
     ConstructorOrder,
+    PrivateVarsLeadingUnderscore,
+    PrivateFuncLeadingUnderscore,
 }
 
 pub fn get_all_qa() -> Vec<QualityAssurance> {
-    vec![QualityAssurance::ConstructorOrder]
+    vec![
+        QualityAssurance::ConstructorOrder,
+        QualityAssurance::PrivateVarsLeadingUnderscore,
+        QualityAssurance::PrivateFuncLeadingUnderscore,
+    ]
 }
 
 pub fn str_to_qa(qa: &str) -> QualityAssurance {
     match qa.to_lowercase().as_str() {
         "constructor_order" => QualityAssurance::ConstructorOrder,
+        "private_vars_leading_underscore" => QualityAssurance::PrivateVarsLeadingUnderscore,
+        "private_func_leading_underscore" => QualityAssurance::PrivateFuncLeadingUnderscore,
         other => {
             panic!("Unrecgonized qa: {}", other)
         }
@@ -98,6 +112,12 @@ pub fn analyze_for_qa(
 
     let locations = match qa {
         QualityAssurance::ConstructorOrder => constructor_order_qa(source_unit),
+        QualityAssurance::PrivateVarsLeadingUnderscore => {
+            private_vars_leading_underscore(source_unit)
+        }
+        QualityAssurance::PrivateFuncLeadingUnderscore => {
+            private_func_leading_underscore(source_unit)
+        }
         _ => panic!("Location dont recognized"),
     };
 
