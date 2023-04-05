@@ -254,7 +254,17 @@ pub fn get_storage_variables_assigned_in_constructor(
                     for node in target_nodes {
                         //Can unwrap since Target::Assign will always be an expression
                         let expression = node.expression().unwrap();
-                        if let pt::Expression::Assign(_, box_expression, _) = expression {
+                        if let pt::Expression::Assign(_, box_expression, box_assigned_value) =
+                            expression
+                        {
+                            /*
+                             * A Non-Value Type can not be immutable
+                             * https://docs.soliditylang.org/en/v0.8.13/contracts.html?highlight=immutable#constant-and-immutable-state-variables
+                             */
+                            if is_a_non_value_type(box_assigned_value) {
+                                continue;
+                            }
+
                             //if the first expr in the assign expr is a variable
                             if let pt::Expression::Variable(identifier) = *box_expression {
                                 //if the variable name exists in the storage variable hashmap
@@ -278,6 +288,34 @@ pub fn get_storage_variables_assigned_in_constructor(
     potential_immutable_variables
 }
 
+fn is_a_non_value_type(assigned_value: Box<pt::Expression>) -> bool {
+    match *assigned_value {
+        // string types
+        pt::Expression::StringLiteral(_) => return true,
+        // Dynamic bytes
+        pt::Expression::FunctionCall(_, box_fn_call, _) => {
+            // bytes (ex: bytes name = abi.encode("Vitalik"))
+            if let pt::Expression::MemberAccess(_, box_member_access_variable, _) =
+                *box_fn_call.clone()
+            {
+                if let pt::Expression::Variable(member_access_identifier) =
+                    *box_member_access_variable
+                {
+                    return member_access_identifier.name == "abi";
+                }
+            }
+
+            // bytes (ex: bytes name = bytes("Vitalik"))
+            if let pt::Expression::Type(_, ty) = *box_fn_call {
+                return pt::Type::DynamicBytes == ty;
+            }
+        }
+        _ => (),
+    }
+
+    return false;
+}
+
 #[test]
 fn test_immutable_variables_optimization() {
     let file_contents = r#"
@@ -290,18 +328,28 @@ fn test_immutable_variables_optimization() {
         uint256 num1;
         uint256 num2;
         address addr1 = address(0);
+        string str1;
+        string str2;
+        bytes b1;
+        bytes b2;
+        bytes b3;
 
 
         constructor(){
             num1 = 100;
             num2 = 100;
+            str1 = "Test Name";
+            str2 = "Another test content";
+            b1 = abi.encode("Test content");
+            b2 = abi.encodePacked("Test content");
+            b3 = bytes("Vitalik");
         }
 
        
         function testFunction() public {
             addr1 = address(0);
             uint256 thing = num1;
-
+            str2 = "i can no longer be immutable anymore";
         }
     }
  
