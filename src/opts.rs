@@ -70,7 +70,7 @@ impl Opts {
                     .map(|f| str_to_vulnerability(f))
                     .collect::<Vec<Vulnerability>>(),
                 solstat_toml
-                    .vulnerabilities
+                    .qa
                     .iter()
                     .map(|f| str_to_qa(f))
                     .collect::<Vec<QualityAssurance>>(),
